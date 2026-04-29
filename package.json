@@ -1,0 +1,37 @@
+{
+  "name": "electron-vue-app",
+  "version": "1.0.0",
+  "description": "Electron + Vue3 + Vite App",
+  "main": "./dist/main/main.js",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite --config vite.renderer.config.mjs",
+    "build": "npm run build:main && npm run build:preload && npm run build:renderer",
+    "build:main": "vite build --config vite.main.config.js",
+    "build:preload": "vite build --config vite.preload.config.js",
+    "build:renderer": "vite build --config vite.renderer.config.mjs --base ./",
+    "preview": "vite preview",
+    "electron:wait": "wait-on tcp:5173 && env -u ELECTRON_RUN_AS_NODE electron src/main/main.js --remote-debugging-port=9223",
+    "electron:dev": "concurrently \"npm run dev\" \"npm run electron:wait\"",
+    "electron:build": "npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^4.6.2",
+    "concurrently": "^8.2.2",
+    "electron": "^27.3.11",
+    "electron-builder": "^24.13.3",
+    "electron-rebuild": "^3.2.9",
+    "unplugin-auto-import": "^0.16.7",
+    "unplugin-vue-components": "^0.25.2",
+    "vite": "^4.5.9",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "element-plus": "^2.13.7",
+    "sql.js": "^1.14.1",
+    "vue": "^3.4.38"
+  }
+}
