@@ -4,12 +4,13 @@
  */
 
 const { getDb, save } = require('./core')
+const { getUserPermissions, getUserRoles, isSuperAdmin } = require('./permission')
 
 /**
  * 员工登录验证
  * @param {string} account - 账号
  * @param {string} password - 密码
- * @returns {Object|null} 登录成功返回用户信息，失败返回null
+ * @returns {Object|null} 登录成功返回用户信息（包含权限），失败返回null
  */
 function login(account, password) {
   const db = getDb()
@@ -19,6 +20,10 @@ function login(account, password) {
   let user = null
   if (stmt.step()) {
     user = stmt.getAsObject()
+    // 获取用户权限和角色信息
+    user.permissions = getUserPermissions(user.id)
+    user.roles = getUserRoles(user.id)
+    user.isSuperAdmin = isSuperAdmin(user.id)
   }
   stmt.free()
   console.log('[DB] login result:', user)

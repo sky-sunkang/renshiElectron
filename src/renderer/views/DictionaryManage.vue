@@ -4,16 +4,16 @@
     <div class="dict-type-panel">
       <div class="panel-header">
         <h3>字典类型</h3>
-        <el-button type="primary" size="small" @click="openTypeDialog()">+ 新增</el-button>
+        <el-button v-if="permStore.hasPermission('dict:add')" type="primary" size="small" @click="openTypeDialog()">+ 新增</el-button>
       </div>
       <el-scrollbar class="type-scroll">
         <el-table :data="types" stripe border size="small" highlight-current-row @current-change="handleTypeChange" style="width: 100%">
           <el-table-column prop="code" label="类型编码" min-width="80" show-overflow-tooltip />
           <el-table-column prop="name" label="类型名称" min-width="80" show-overflow-tooltip />
-          <el-table-column label="操作" width="120" align="center" >
+          <el-table-column label="操作" width="120" align="center" fixed="right">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openTypeDialog(scope.row)">编辑</el-button>
-              <el-button link type="danger" size="small" @click="removeType(scope.row)">删除</el-button>
+              <el-button v-if="permStore.hasPermission('dict:edit')" link type="primary" size="small" @click="openTypeDialog(scope.row)">编辑</el-button>
+              <el-button v-if="permStore.hasPermission('dict:delete')" link type="danger" size="small" @click="removeType(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -24,7 +24,7 @@
     <div class="dict-item-panel">
       <div class="panel-header">
         <h3>{{ currentType ? currentType.name + ' - 字典项' : '字典项' }}</h3>
-        <el-button type="primary" size="small" :disabled="!currentType" @click="openItemDialog()">+ 新增</el-button>
+        <el-button v-if="permStore.hasPermission('dict:item:add')" type="primary" size="small" :disabled="!currentType" @click="openItemDialog()">+ 新增</el-button>
       </div>
       <el-scrollbar class="item-scroll">
         <el-table :data="items" stripe border size="small" v-loading="loading">
@@ -34,8 +34,8 @@
           <el-table-column prop="sort" label="排序" width="80" align="center" />
           <el-table-column label="操作" width="140" align="center">
             <template #default="scope">
-              <el-button link type="primary" size="small" @click="openItemDialog(scope.row)">编辑</el-button>
-              <el-button link type="danger" size="small" @click="removeItem(scope.row)">删除</el-button>
+              <el-button v-if="permStore.hasPermission('dict:item:edit')" link type="primary" size="small" @click="openItemDialog(scope.row)">编辑</el-button>
+              <el-button v-if="permStore.hasPermission('dict:item:delete')" link type="danger" size="small" @click="removeItem(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -86,6 +86,9 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { usePermissionStore } from '../stores/permission.js'
+
+const permStore = usePermissionStore()
 
 // 字典类型数据
 const types = ref([])
@@ -249,7 +252,7 @@ onMounted(loadTypes)
   overflow: hidden;
 }
 .dict-type-panel {
-  width: 350px;
+  width: 280px;
   min-width: 280px;
   height: 100%;
   background: #fff;

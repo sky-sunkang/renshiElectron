@@ -155,12 +155,15 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { Minus, FullScreen, Crop, Close, UserFilled } from '@element-plus/icons-vue'
 import Login from './views/Login.vue'
 import { useAuthStore } from './stores/auth.js'
+import { usePermissionStore } from './stores/permission.js'
 import routerConfig from './router/index.js'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const permStore = usePermissionStore()
 const { isLoggedIn, currentUser } = storeToRefs(authStore)
+const { isSuperAdmin, permissions } = storeToRefs(permStore)
 
 // 当前用户头像
 const currentUserAvatar = ref('')
@@ -178,9 +181,17 @@ watch(currentUser, () => {
   loadCurrentUserAvatar()
 }, { immediate: true })
 
-// 从路由配置中读取菜单项（排除重定向路由）
+// 从路由配置中读取菜单项（根据权限过滤）
 const menuItems = computed(() => {
-  return routerConfig.options.routes.filter(r => r.meta && r.meta.title)
+  return routerConfig.options.routes.filter(r => {
+    // 排除重定向路由
+    if (!r.meta || !r.meta.title) return false
+    // 检查权限 - 超级管理员直接显示所有菜单
+    if (r.meta.permission) {
+      return isSuperAdmin.value || permissions.value.includes(r.meta.permission)
+    }
+    return true
+  })
 })
 
 const activeMenu = computed(() => route.path)

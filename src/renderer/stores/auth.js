@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { ElMessage } from 'element-plus'
+import { usePermissionStore } from './permission.js'
 
 export const useAuthStore = defineStore('auth', () => {
   const isLoggedIn = ref(false)
@@ -12,6 +13,9 @@ export const useAuthStore = defineStore('auth', () => {
       try {
         currentUser.value = JSON.parse(userStr)
         isLoggedIn.value = true
+        // 初始化权限
+        const permStore = usePermissionStore()
+        permStore.initFromUser(currentUser.value)
       } catch (e) {
         localStorage.removeItem('currentUser')
       }
@@ -22,12 +26,18 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = user
     isLoggedIn.value = true
     localStorage.setItem('currentUser', JSON.stringify(user))
+    // 初始化权限
+    const permStore = usePermissionStore()
+    permStore.initFromUser(user)
   }
 
   function logout() {
     localStorage.removeItem('currentUser')
     currentUser.value = null
     isLoggedIn.value = false
+    // 清空权限
+    const permStore = usePermissionStore()
+    permStore.clear()
     ElMessage.success('已退出登录')
   }
 

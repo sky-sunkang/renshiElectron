@@ -186,9 +186,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **contextIsolation**：预加载脚本启用 `contextIsolation: true`，通过 `contextBridge` 暴露 API
 - **数据库文件**：`app.db` 已加入 `.gitignore`
 - **不用 TypeScript**：项目全部使用 JavaScript
-- **语言**：页面上能看到的地方尽量都是使用中文
 - **代码规范**：JS 方法需写注释说明用途，方法内部关键步骤也需注释
 - **数据查询**：`emp.getAll()` 返回的员工数据包含 `department_name`（关联部门名称）；`dept.getAll()` 返回的部门数据包含 `path_ids` 和 `path_names`（自动计算的路径）
-- **图表组件**：使用 ECharts 绑定图表，需要在组件卸载时销毁图表实例，窗口大小变化时调用 `resize()`
 - **滚动条**：统一使用 Element Plus 的 `el-scrollbar` 组件，保持界面风格一致
 - **公共代码组件化**：重复使用的代码尽量抽取为公共组件或工具函数，如部门树、字典下拉、表格操作栏等

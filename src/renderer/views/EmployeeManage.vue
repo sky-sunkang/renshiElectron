@@ -27,12 +27,12 @@
             <el-input v-model="search.name" placeholder="姓名" clearable style="width: 180px" />
             <el-button type="primary" :icon="Search" @click="load">查询</el-button>
             <el-button @click="reset">重置</el-button>
-            <el-button type="primary" style="margin-left: auto" @click="openDialog()">+ 新增员工</el-button>
+            <el-button v-if="permStore.hasPermission('emp:add')" type="primary" style="margin-left: auto" @click="openDialog()">+ 新增员工</el-button>
           </div>
 
           <div class="action-bar">
-            <el-button plain @click="exportData">导出</el-button>
-            <el-button type="danger" plain :disabled="!selected.length" @click="batchDelete">批量删除</el-button>
+            <el-button v-if="permStore.hasPermission('emp:export')" plain @click="exportData">导出</el-button>
+            <el-button v-if="permStore.hasPermission('emp:batchDelete')" type="danger" plain :disabled="!selected.length" @click="batchDelete">批量删除</el-button>
             <el-radio-group v-model="search.mode" size="small" style="margin-left: auto">
               <el-radio-button label="direct">当前部门</el-radio-button>
               <el-radio-button label="all">所有子部门</el-radio-button>
@@ -68,8 +68,8 @@
             </el-table-column>
             <el-table-column label="操作" width="140" align="center" fixed="right">
               <template #default="scope">
-                <el-button link type="primary" size="small" @click="openDialog(scope.row)">编辑</el-button>
-                <el-button link type="danger" size="small" @click="remove(scope.row.id)">删除</el-button>
+                <el-button v-if="permStore.hasPermission('emp:edit')" link type="primary" size="small" @click="openDialog(scope.row)">编辑</el-button>
+                <el-button v-if="permStore.hasPermission('emp:delete')" link type="danger" size="small" @click="remove(scope.row.id)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -203,10 +203,12 @@ import { Search } from '@element-plus/icons-vue'
 import { useDeptStore } from '../stores/dept.js'
 import { useEmpStore } from '../stores/emp.js'
 import { useDictStore } from '../stores/dict.js'
+import { usePermissionStore } from '../stores/permission.js'
 
 const deptStore = useDeptStore()
 const empStore = useEmpStore()
 const dictStore = useDictStore()
+const permStore = usePermissionStore()
 const { list: deptList, treeData: deptTreeData } = storeToRefs(deptStore)
 const { list: empList, loading } = storeToRefs(empStore)
 const { gender: genderDict } = storeToRefs(dictStore)

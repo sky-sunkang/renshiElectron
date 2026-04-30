@@ -4,7 +4,7 @@
     <div class="dept-tree-panel">
       <div class="tree-header">
         <h3>组织架构</h3>
-        <el-button type="primary" size="small" @click="openDialog()">+ 新增</el-button>
+        <el-button v-if="permStore.hasPermission('dept:add')" type="primary" size="small" @click="openDialog()">+ 新增</el-button>
       </div>
       <el-input
         v-model="treeFilter"
@@ -59,8 +59,8 @@
               <el-table-column label="操作" width="140" align="center">
                 <template #default="scope">
                   <template v-if="(scope.row.parent_id || 0) !== 0">
-                    <el-button link type="primary" size="small" @click="openDialog(scope.row)">编辑</el-button>
-                    <el-button link type="danger" size="small" @click="remove(scope.row)">删除</el-button>
+                    <el-button v-if="permStore.hasPermission('dept:edit')" link type="primary" size="small" @click="openDialog(scope.row)">编辑</el-button>
+                    <el-button v-if="permStore.hasPermission('dept:delete')" link type="danger" size="small" @click="remove(scope.row)">删除</el-button>
                   </template>
                 </template>
               </el-table-column>
@@ -106,8 +106,10 @@ import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Document } from '@element-plus/icons-vue'
 import { useDeptStore } from '../stores/dept.js'
+import { usePermissionStore } from '../stores/permission.js'
 
 const deptStore = useDeptStore()
+const permStore = usePermissionStore()
 const { list: deptList, treeData } = storeToRefs(deptStore)
 
 const loading = ref(false)

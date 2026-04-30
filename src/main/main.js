@@ -69,6 +69,20 @@ app.whenReady().then(() => {
   ipcMain.handle('dict:updateItem', (_, id, typeCode, label, value, sort) => db.updateDictItem(id, typeCode, label, value, sort))
   ipcMain.handle('dict:deleteItem', (_, id) => db.deleteDictItem(id))
 
+  // Permissions
+  ipcMain.handle('perm:getRoles', () => db.getAllRoles())
+  ipcMain.handle('perm:getRoleById', (_, id) => db.getRoleById(id))
+  ipcMain.handle('perm:addRole', (_, data) => db.addRole(data))
+  ipcMain.handle('perm:updateRole', (_, id, data) => db.updateRole(id, data))
+  ipcMain.handle('perm:deleteRole', (_, id) => db.deleteRole(id))
+  ipcMain.handle('perm:getRolePermissions', (_, roleId) => db.getRolePermissions(roleId))
+  ipcMain.handle('perm:setRolePermissions', (_, roleId, codes) => db.setRolePermissions(roleId, codes))
+  ipcMain.handle('perm:setUserRoles', (_, userId, roleIds) => db.setUserRoles(userId, roleIds))
+  ipcMain.handle('perm:getRoleUsers', (_, roleId) => db.getRoleUsers(roleId))
+  ipcMain.handle('perm:getAllPermissions', () => db.getAllPermissions())
+  ipcMain.handle('perm:hasPermission', (_, userId, code) => db.hasPermission(userId, code))
+  ipcMain.handle('perm:isSuperAdmin', (_, userId) => db.isSuperAdmin(userId))
+
   // Window controls
   ipcMain.handle('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow()

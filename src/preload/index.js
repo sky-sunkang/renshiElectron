@@ -41,4 +41,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updateItem: (id, typeCode, label, value, sort) => ipcRenderer.invoke('dict:updateItem', id, typeCode, label, value, sort),
     deleteItem: (id) => ipcRenderer.invoke('dict:deleteItem', id),
   },
+  perm: {
+    getRoles: () => ipcRenderer.invoke('perm:getRoles'),
+    getRoleById: (id) => ipcRenderer.invoke('perm:getRoleById', id),
+    addRole: (data) => ipcRenderer.invoke('perm:addRole', data),
+    updateRole: (id, data) => ipcRenderer.invoke('perm:updateRole', id, data),
+    deleteRole: (id) => ipcRenderer.invoke('perm:deleteRole', id),
+    getRolePermissions: (roleId) => ipcRenderer.invoke('perm:getRolePermissions', roleId),
+    setRolePermissions: (roleId, codes) => ipcRenderer.invoke('perm:setRolePermissions', roleId, codes),
+    setUserRoles: (userId, roleIds) => ipcRenderer.invoke('perm:setUserRoles', userId, roleIds),
+    getRoleUsers: (roleId) => ipcRenderer.invoke('perm:getRoleUsers', roleId),
+    getAllPermissions: () => ipcRenderer.invoke('perm:getAllPermissions'),
+    hasPermission: (userId, code) => ipcRenderer.invoke('perm:hasPermission', userId, code),
+    isSuperAdmin: (userId) => ipcRenderer.invoke('perm:isSuperAdmin', userId),
+  },
 })

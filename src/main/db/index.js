@@ -8,6 +8,7 @@ const department = require('./department')
 const employee = require('./employee')
 const dict = require('./dict')
 const statistics = require('./statistics')
+const permission = require('./permission')
 
 /**
  * 初始化数据库
@@ -21,6 +22,7 @@ async function init() {
   department.initDepartmentTables()
   employee.initEmployeeTables()
   dict.initDictTables()
+  permission.initPermissionTables()
 
   core.save()
   console.log('[DB] init done')
@@ -56,5 +58,19 @@ module.exports = {
   updateDictItem: dict.updateDictItem,
   deleteDictItem: dict.deleteDictItem,
   // 统计模块
-  getStatistics: statistics.getStatistics
+  getStatistics: statistics.getStatistics,
+  // 权限模块
+  getAllRoles: permission.getAllRoles,
+  getRoleById: permission.getRoleById,
+  addRole: permission.addRole,
+  updateRole: permission.updateRole,
+  deleteRole: permission.deleteRole,
+  getRolePermissions: permission.getRolePermissions,
+  setRolePermissions: permission.setRolePermissions,
+  setUserRoles: permission.setUserRoles,
+  getRoleUsers: permission.getRoleUsers,
+  getAllPermissions: permission.getAllPermissions,
+  getUserPermissions: permission.getUserPermissions,
+  hasPermission: permission.hasPermission,
+  isSuperAdmin: permission.isSuperAdmin
 }
