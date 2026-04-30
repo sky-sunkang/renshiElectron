@@ -9,28 +9,25 @@ const employee = require('./employee')
 const dict = require('./dict')
 const statistics = require('./statistics')
 const permission = require('./permission')
+const init = require('./init')
 
 /**
  * 初始化数据库
  * 创建表结构、兼容旧版字段、初始化种子数据
  */
-async function init() {
+async function initDatabase() {
   // 初始化数据库连接
   await core.initConnection()
 
-  // 初始化各模块表结构和种子数据
-  department.initDepartmentTables()
-  employee.initEmployeeTables()
-  dict.initDictTables()
-  permission.initPermissionTables()
+  // 执行完整初始化（表结构 + 种子数据）
+  init.initDatabase()
 
-  core.save()
-  console.log('[DB] init done')
+  console.log('[DB] ready')
 }
 
 module.exports = {
   // 基础功能
-  init,
+  init: initDatabase,
   close: core.close,
   // 部门模块
   addDepartment: department.addDepartment,

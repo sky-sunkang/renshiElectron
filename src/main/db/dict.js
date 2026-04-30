@@ -142,81 +142,6 @@ function deleteDictItem(id) {
   return true
 }
 
-/**
- * 初始化字典表结构和种子数据
- */
-function initDictTables() {
-  const db = getDb()
-
-  // 创建字典类型表
-  db.run(`
-    CREATE TABLE IF NOT EXISTS dict_types (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
-      name TEXT NOT NULL,
-      description TEXT,
-      created_at INTEGER DEFAULT (unixepoch())
-    )
-  `)
-
-  // 创建字典项表
-  db.run(`
-    CREATE TABLE IF NOT EXISTS dict_items (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      type_code TEXT NOT NULL,
-      label TEXT NOT NULL,
-      value TEXT NOT NULL,
-      sort INTEGER DEFAULT 0,
-      created_at INTEGER DEFAULT (unixepoch())
-    )
-  `)
-
-  // 初始化性别字典数据
-  const typeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'gender'")
-  typeCheckStmt.step()
-  const typeCount = Number(typeCheckStmt.getAsObject().c)
-  typeCheckStmt.free()
-  if (typeCount === 0) {
-    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description) VALUES (?, ?, ?)')
-    typeStmt.run(['gender', '性别', '员工性别选项'])
-    typeStmt.free()
-
-    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort) VALUES (?, ?, ?, ?)')
-    itemStmt.run(['gender', '男', '男', 1])
-    itemStmt.run(['gender', '女', '女', 2])
-    itemStmt.free()
-    console.log('[DB] dictionaries seeded')
-  }
-
-  // 初始化职位字典数据
-  const positionCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'position'")
-  positionCheckStmt.step()
-  const positionCount = Number(positionCheckStmt.getAsObject().c)
-  positionCheckStmt.free()
-  if (positionCount === 0) {
-    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description) VALUES (?, ?, ?)')
-    typeStmt.run(['position', '职位', '员工职位选项'])
-    typeStmt.free()
-
-    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort) VALUES (?, ?, ?, ?)')
-    const positions = [
-      { label: 'CEO', value: 'CEO', sort: 1 },
-      { label: 'CTO', value: 'CTO', sort: 2 },
-      { label: '部门经理', value: '部门经理', sort: 3 },
-      { label: '高级工程师', value: '高级工程师', sort: 4 },
-      { label: '工程师', value: '工程师', sort: 5 },
-      { label: '人事专员', value: '人事专员', sort: 6 },
-      { label: '财务专员', value: '财务专员', sort: 7 },
-      { label: '行政专员', value: '行政专员', sort: 8 },
-      { label: '销售经理', value: '销售经理', sort: 9 },
-      { label: '销售代表', value: '销售代表', sort: 10 }
-    ]
-    positions.forEach(p => itemStmt.run(['position', p.label, p.value, p.sort]))
-    itemStmt.free()
-    console.log('[DB] position dictionary seeded')
-  }
-}
-
 module.exports = {
   getAllDictTypes,
   addDictType,
@@ -225,6 +150,5 @@ module.exports = {
   getDictItemsByType,
   addDictItem,
   updateDictItem,
-  deleteDictItem,
-  initDictTables
+  deleteDictItem
 }

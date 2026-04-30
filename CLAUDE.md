@@ -28,9 +28,11 @@
 │   │   └── db/                  # 数据库模块（按功能拆分）
 │   │       ├── index.js         # 模块入口：整合所有子模块统一导出
 │   │       ├── core.js          # 核心模块：数据库连接、持久化
+│   │       ├── init.js          # 初始化脚本：表结构创建、种子数据初始化
 │   │       ├── department.js    # 部门模块：部门增删改查、路径计算
 │   │       ├── employee.js      # 员工模块：员工增删改查、登录认证
 │   │       ├── dict.js          # 字典模块：字典类型和字典项管理
+│   │       ├── permission.js    # 权限模块：RBAC 权限管理
 │   │       └── statistics.js    # 统计模块：各类统计数据查询
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
@@ -44,7 +46,8 @@
 │   │   │   ├── auth.js          # 登录状态（isLoggedIn / currentUser / localStorage 持久化）
 │   │   │   ├── dept.js          # 部门列表（list / treeData / loadAll）
 │   │   │   ├── emp.js           # 员工列表（list / loading / loadAll）
-│   │   │   └── dict.js          # 字典数据（types / list / gender / loadAll）
+│   │   │   ├── dict.js          # 字典数据（types / list / gender / loadAll）
+│   │   │   └── permission.js    # 权限状态（权限检查、角色管理）
 │   │   ├── views/               # 页面组件
 │   │   │   ├── Login.vue            # 账号密码登录页
 │   │   │   ├── EmployeeManage.vue   # 员工管理（左侧部门树 + 右侧列表 + Pinia）
@@ -77,29 +80,6 @@ npm run electron:build    # 构建并打包 Electron 应用
 2. **预加载脚本** (`src/preload/index.js`) — 安全桥接，暴露 `window.electronAPI`
 3. **渲染进程** (`src/renderer/`) — Vue3 SPA，通过 vue-router 路由切换页面
 
-### 路由
-
-使用 `createWebHashHistory`，适合 Electron 文件协议：
-
-| 路径 | 页面 |
-|------|------|
-| `/` | 重定向到 `/employee` |
-| `/employee` | 员工管理 |
-| `/department` | 部门管理 |
-| `/dictionary` | 字典管理 |
-| `/statistics` | 数据统计 |
-
-### Pinia 状态管理
-
-渲染进程使用 Pinia 管理共享状态：
-
-- **auth.js** — `isLoggedIn`, `currentUser`，通过 `localStorage` 持久化，提供 `login` / `logout` / `checkLogin`
-- **dept.js** — `list`（原始部门列表）, `treeData`（计算属性，自动构建树）, `loadAll()`
-- **emp.js** — `list`（员工列表）, `loading`, `loadAll()`
-- **dict.js** — `types`（字典类型）, `list`（所有字典项）, `gender`（性别字典）, `loadAll()`
-
-页面组件通过 `storeToRefs` 读取状态，直接调用 store action 触发数据加载。
-
 ### IPC 通信
 
 渲染进程通过 `window.electronAPI` 调用主进程：
@@ -114,22 +94,40 @@ npm run electron:build    # 构建并打包 Electron 应用
 
 **模块结构：**
 - `core.js` — 数据库连接管理、持久化
+- `init.js` — 初始化脚本（表结构创建、种子数据、角色权限初始化）
 - `department.js` — 部门 CRUD、路径计算
 - `employee.js` — 员工 CRUD、登录认证
 - `dict.js` — 字典类型和字典项管理
+- `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）
 - `statistics.js` — 统计数据查询
 
 **表结构：**
 - `departments`：id, name, description, parent_id, path_ids, path_names, created_at
-- `employees`：id, name, account, password, gender, age, phone, email, department_id, position, salary, created_at
+- `employees`：id, name, account, password, gender, age, phone, email, department_id, position, salary, avatar, role_code, created_at
 - `dict_types`：id, code, name, description, created_at
 - `dict_items`：id, type_code, label, value, sort, created_at
+- `roles`：id, code, name, description, is_system, created_at
+- `permissions`：id, code, name, type, description, created_at
+- `role_permissions`：id, role_id, permission_code, created_at
+- `user_roles`：id, user_id, role_id, created_at
 
-**初始化数据**：
+**初始化数据：**
 - 21 个部门，3 层级结构
-- 50+ 名员工，每人有拼音账号（如 `zhangsan`），默认密码 `123456`
-- 内置超级管理员 `sysadmin` / `123456`
+- 48 名员工，每人有拼音账号（如 `zhangsan`），默认密码 `123456`
+- 职位字典从员工种子数据中自动提取
 - 性别字典：男、女
+
+**系统角色：**
+| 角色代码 | 角色名称 | 默认用户 |
+|----------|----------|----------|
+| sysadmin | 超级管理员 | sysadmin（系统管理员） |
+| admin | 管理员 | zhaoliu（赵六，技术总监） |
+| hr | 人事专员 | zhangershiqi（张二十七，人事总监） |
+| user | 普通用户 | zhouba（周八，前端工程师） |
+
+**权限类型：**
+- 菜单权限（menu:xxx）：控制页面访问
+- 按钮权限（xxx:add/edit/delete）：控制操作按钮
 
 ## 界面布局
 
@@ -150,3 +148,5 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **数据查询**：`emp.getAll()` 返回的员工数据包含 `department_name`（关联部门名称）；`dept.getAll()` 返回的部门数据包含 `path_ids` 和 `path_names`（自动计算的路径）
 - **滚动条**：统一使用 Element Plus 的 `el-scrollbar` 组件，保持界面风格一致
 - **公共代码组件化**：重复使用的代码尽量抽取为公共组件或工具函数，如部门树、字典下拉、表格操作栏等
+- **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化脚本一定要保证有数据的时候不要覆盖数据，启动时统一调用
+- **权限控制**：登录后用户权限存储在 `currentUser.permissions` 中，通过 `v-if="hasPermission('xxx')"` 控制按钮显示
