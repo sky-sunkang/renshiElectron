@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 const db = require('./db')
 
@@ -11,9 +11,15 @@ const createWindow = () => {
     ? path.join(__dirname, '../resources/icon.png')
     : path.join(__dirname, '../../resources/icon.png')
 
+  // 获取屏幕尺寸，设置窗口为屏幕的80%
+  const primaryDisplay = screen.getPrimaryDisplay()
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+  const windowWidth = Math.floor(screenWidth * 0.8)
+  const windowHeight = Math.floor(screenHeight * 0.8)
+
   const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
+    width: windowWidth,
+    height: windowHeight,
     frame: false,
     icon: iconPath,
     webPreferences: {
@@ -113,5 +119,10 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   db.close()
-  if (process.platform !== 'darwin') app.quit()
+  // 开发模式下强制退出，避免进程残留
+  if (!app.isPackaged) {
+    app.quit()
+  } else if (process.platform !== 'darwin') {
+    app.quit()
+  }
 })

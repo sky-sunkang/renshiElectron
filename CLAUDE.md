@@ -104,42 +104,6 @@ npm run electron:build    # 构建并打包 Electron 应用
 
 渲染进程通过 `window.electronAPI` 调用主进程：
 
-**窗口控制**
-- `window.electronAPI.window.minimize()`
-- `window.electronAPI.window.maximize()`
-- `window.electronAPI.window.close()`
-
-**认证**
-- `auth.login(account, password)` — 返回 `{id, name, account, position}` 或 `null`
-
-**部门**
-- `dept.add(name, description, parent_id)`
-- `dept.getAll()`
-- `dept.update(id, name, description, parent_id)`
-- `dept.delete(id)`
-- `dept.getChildren(id)`
-
-**员工**
-- `emp.add(data)`
-- `emp.getAll()`
-- `emp.getById(id)`
-- `emp.update(id, data)`
-- `emp.delete(id)`
-- `emp.updatePassword(id, password)`
-
-**字典**
-- `dict.getTypes()` — 获取所有字典类型
-- `dict.addType(code, name, description)`
-- `dict.updateType(id, code, name, description)`
-- `dict.deleteType(id)`
-- `dict.getItems(typeCode)` — 获取指定类型的字典项
-- `dict.addItem(typeCode, label, value, sort)`
-- `dict.updateItem(id, typeCode, label, value, sort)`
-- `dict.deleteItem(id)`
-
-**统计**
-- `stats.get()` — 返回 `{total, deptStats, genderStats, avgSalary, deptSalaryStats}`
-
 ### 数据库
 
 使用 `sql.js`（纯 JS，无需原生编译），按模块拆分：
@@ -161,8 +125,6 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `dict_types`：id, code, name, description, created_at
 - `dict_items`：id, type_code, label, value, sort, created_at
 
-**部门路径**：`path_ids` 存储从根到当前部门的 ID 路径（逗号分隔），`path_names` 存储名称路径。新增/编辑部门后自动调用 `recalcAllDeptPaths()` 重新计算全表路径。
-
 **初始化数据**：
 - 21 个部门，3 层级结构
 - 50+ 名员工，每人有拼音账号（如 `zhangsan`），默认密码 `123456`
@@ -174,9 +136,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **自定义标题栏**：`frame: false`，无边框窗口，顶部可拖拽区域 + 最小化/最大化/关闭按钮
 - **左侧侧边栏**：220px，深色背景，el-menu 导航
 - **右侧主内容区**：白色顶部栏（页面标题 + 用户信息 + 修改密码/退出）+  底部内容区（如果是左右结构的布局，各自占满内容区域高度，高度超出各自滚动）
-- **部门/员工管理**：左侧窄面板（200px）放部门树，右侧放列表；内容超出显示滚动条
 - **字典管理**：左侧字典类型列表，右侧字典项列表，其他模块有需要下拉选项优先使用该模块来配置实现
-- **统计页面**：顶部统计卡片（员工总数、部门数量、平均薪资、性别比例）+ 部门人数折线图/饼状图 + 部门薪资统计折线图
 - **中文界面**：Element Plus 使用 `zhCn` locale，分页等组件显示中文
 
 ## 注意事项

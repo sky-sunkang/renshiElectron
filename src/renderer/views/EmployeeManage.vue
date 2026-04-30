@@ -169,7 +169,14 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="职位">
-              <el-input v-model="form.position" placeholder="请输入职位" />
+              <el-select v-model="form.position" placeholder="请选择职位" style="width: 100%" clearable>
+                <el-option
+                  v-for="item in positionOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
         </el-row>
@@ -212,6 +219,9 @@ const permStore = usePermissionStore()
 const { list: deptList, treeData: deptTreeData } = storeToRefs(deptStore)
 const { list: empList, loading } = storeToRefs(empStore)
 const { gender: genderDict } = storeToRefs(dictStore)
+
+/** 职位字典选项 */
+const positionOptions = computed(() => dictStore.getOptions('position'))
 
 const search = reactive({ name: '', mode: 'direct' })
 const page = ref(1)

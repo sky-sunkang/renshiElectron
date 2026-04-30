@@ -151,8 +151,9 @@ function initSystemPermissions() {
 
 /**
  * 分配权限给角色
+ * @param {boolean} force - 是否强制重新分配，默认false
  */
-function assignPermissionsToRoles() {
+function assignPermissionsToRoles(force = false) {
   const db = getDb()
 
   // 获取角色ID
@@ -171,6 +172,18 @@ function assignPermissionsToRoles() {
   const userId = getRoleId('user')
 
   if (!sysadminId || !adminId || !hrId || !userId) return
+
+  // 如果不是强制模式，检查是否已有权限分配
+  if (!force) {
+    const checkStmt = db.prepare('SELECT COUNT(*) as c FROM role_permissions')
+    checkStmt.step()
+    const count = Number(checkStmt.getAsObject().c)
+    checkStmt.free()
+    if (count > 0) {
+      console.log('[DB] role_permissions already initialized, skip')
+      return
+    }
+  }
 
   // 清除现有权限分配
   db.run('DELETE FROM role_permissions')

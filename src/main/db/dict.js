@@ -187,6 +187,34 @@ function initDictTables() {
     itemStmt.free()
     console.log('[DB] dictionaries seeded')
   }
+
+  // 初始化职位字典数据
+  const positionCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'position'")
+  positionCheckStmt.step()
+  const positionCount = Number(positionCheckStmt.getAsObject().c)
+  positionCheckStmt.free()
+  if (positionCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description) VALUES (?, ?, ?)')
+    typeStmt.run(['position', '职位', '员工职位选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort) VALUES (?, ?, ?, ?)')
+    const positions = [
+      { label: 'CEO', value: 'CEO', sort: 1 },
+      { label: 'CTO', value: 'CTO', sort: 2 },
+      { label: '部门经理', value: '部门经理', sort: 3 },
+      { label: '高级工程师', value: '高级工程师', sort: 4 },
+      { label: '工程师', value: '工程师', sort: 5 },
+      { label: '人事专员', value: '人事专员', sort: 6 },
+      { label: '财务专员', value: '财务专员', sort: 7 },
+      { label: '行政专员', value: '行政专员', sort: 8 },
+      { label: '销售经理', value: '销售经理', sort: 9 },
+      { label: '销售代表', value: '销售代表', sort: 10 }
+    ]
+    positions.forEach(p => itemStmt.run(['position', p.label, p.value, p.sort]))
+    itemStmt.free()
+    console.log('[DB] position dictionary seeded')
+  }
 }
 
 module.exports = {
