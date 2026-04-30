@@ -6,7 +6,7 @@
 const { getDb, save } = require('./core')
 
 /**
- * 获取用户的权限列表
+ * 获取用户的权限列表（排除已删除的）
  * @param {number} userId - 用户ID
  * @returns {Array} 权限代码列表
  */
@@ -16,7 +16,7 @@ function getUserPermissions(userId) {
     SELECT DISTINCT rp.permission_code
     FROM user_roles ur
     JOIN role_permissions rp ON ur.role_id = rp.role_id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = ? AND ur.is_deleted = 0 AND rp.is_deleted = 0
   `)
   stmt.bind([userId])
   const permissions = []
@@ -28,7 +28,7 @@ function getUserPermissions(userId) {
 }
 
 /**
- * 获取用户的角色列表
+ * 获取用户的角色列表（排除已删除的）
  * @param {number} userId - 用户ID
  * @returns {Array} 角色信息列表
  */
@@ -38,7 +38,7 @@ function getUserRoles(userId) {
     SELECT r.id, r.code, r.name, r.description
     FROM user_roles ur
     JOIN roles r ON ur.role_id = r.id
-    WHERE ur.user_id = ?
+    WHERE ur.user_id = ? AND ur.is_deleted = 0 AND r.is_deleted = 0
   `)
   stmt.bind([userId])
   const roles = []
@@ -50,7 +50,7 @@ function getUserRoles(userId) {
 }
 
 /**
- * 检查用户是否有指定权限
+ * 检查用户是否有指定权限（排除已删除的）
  * @param {number} userId - 用户ID
  * @param {string} permissionCode - 权限代码
  * @returns {boolean} 是否有权限
@@ -61,7 +61,7 @@ function hasPermission(userId, permissionCode) {
     SELECT COUNT(*) as c
     FROM user_roles ur
     JOIN role_permissions rp ON ur.role_id = rp.role_id
-    WHERE ur.user_id = ? AND rp.permission_code = ?
+    WHERE ur.user_id = ? AND rp.permission_code = ? AND ur.is_deleted = 0 AND rp.is_deleted = 0
   `)
   stmt.bind([userId, permissionCode])
   stmt.step()
@@ -78,8 +78,8 @@ function hasPermission(userId, permissionCode) {
  */
 function isSuperAdmin(userId) {
   const db = getDb()
-  // 先检查是否为系统管理员账号
-  const accountStmt = db.prepare('SELECT account FROM employees WHERE id = ?')
+  // 先检查是否为系统管理员账号（排除已删除的）
+  const accountStmt = db.prepare('SELECT account FROM employees WHERE id = ? AND is_deleted = 0')
   accountStmt.bind([userId])
   accountStmt.step()
   const accountObj = accountStmt.getAsObject()
@@ -90,12 +90,12 @@ function isSuperAdmin(userId) {
     return true
   }
 
-  // 其他用户检查是否有 sysadmin 角色
+  // 其他用户检查是否有 sysadmin 角色（排除已删除的）
   const stmt = db.prepare(`
     SELECT COUNT(*) as c
     FROM user_roles ur
     JOIN roles r ON ur.role_id = r.id
-    WHERE ur.user_id = ? AND r.code = 'sysadmin'
+    WHERE ur.user_id = ? AND r.code = 'sysadmin' AND ur.is_deleted = 0 AND r.is_deleted = 0
   `)
   stmt.bind([userId])
   stmt.step()
@@ -107,12 +107,12 @@ function isSuperAdmin(userId) {
 // ==================== 角色管理 ====================
 
 /**
- * 获取所有角色
+ * 获取所有角色（排除已删除的）
  * @returns {Array} 角色列表
  */
 function getAllRoles() {
   const db = getDb()
-  const stmt = db.prepare('SELECT * FROM roles ORDER BY is_system DESC, created_at ASC')
+  const stmt = db.prepare('SELECT * FROM roles WHERE is_deleted = 0 ORDER BY is_system DESC, created_at ASC')
   const roles = []
   while (stmt.step()) {
     const role = stmt.getAsObject()
@@ -124,13 +124,13 @@ function getAllRoles() {
 }
 
 /**
- * 根据ID获取角色
+ * 根据ID获取角色（排除已删除的）
  * @param {number} id - 角色ID
  * @returns {Object|null} 角色信息
  */
 function getRoleById(id) {
   const db = getDb()
-  const stmt = db.prepare('SELECT * FROM roles WHERE id = ?')
+  const stmt = db.prepare('SELECT * FROM roles WHERE id = ? AND is_deleted = 0')
   stmt.bind([id])
   let role = null
   if (stmt.step()) {
@@ -144,12 +144,13 @@ function getRoleById(id) {
 /**
  * 新增角色
  * @param {Object} data - 角色数据
+ * @param {number} createdBy - 创建人ID
  * @returns {number} 新增角色的ID
  */
-function addRole(data) {
+function addRole(data, createdBy) {
   const db = getDb()
-  const stmt = db.prepare('INSERT INTO roles (code, name, description) VALUES (?, ?, ?)')
-  stmt.run([data.code, data.name, data.description])
+  const stmt = db.prepare('INSERT INTO roles (code, name, description, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
+  stmt.run([data.code, data.name, data.description, createdBy || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
@@ -163,23 +164,25 @@ function addRole(data) {
  * 更新角色
  * @param {number} id - 角色ID
  * @param {Object} data - 角色数据
+ * @param {number} updatedBy - 修改人ID
  * @returns {boolean} 更新成功返回true
  */
-function updateRole(id, data) {
+function updateRole(id, data, updatedBy) {
   const db = getDb()
-  const stmt = db.prepare('UPDATE roles SET name = ?, description = ? WHERE id = ?')
-  stmt.run([data.name, data.description, id])
+  const stmt = db.prepare('UPDATE roles SET name = ?, description = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([data.name, data.description, updatedBy || null, id])
   stmt.free()
   save()
   return true
 }
 
 /**
- * 删除角色
+ * 删除角色（逻辑删除）
  * @param {number} id - 角色ID
+ * @param {number} deletedBy - 删除人ID
  * @returns {boolean} 删除成功返回true
  */
-function deleteRole(id) {
+function deleteRole(id, deletedBy) {
   const db = getDb()
 
   // 检查是否为系统角色
@@ -193,19 +196,19 @@ function deleteRole(id) {
     throw new Error('系统角色不能删除')
   }
 
-  // 删除角色权限关联
-  const permStmt = db.prepare('DELETE FROM role_permissions WHERE role_id = ?')
+  // 逻辑删除角色权限关联
+  const permStmt = db.prepare('UPDATE role_permissions SET is_deleted = 1 WHERE role_id = ?')
   permStmt.run([id])
   permStmt.free()
 
-  // 删除用户角色关联
-  const userStmt = db.prepare('DELETE FROM user_roles WHERE role_id = ?')
+  // 逻辑删除用户角色关联
+  const userStmt = db.prepare('UPDATE user_roles SET is_deleted = 1 WHERE role_id = ?')
   userStmt.run([id])
   userStmt.free()
 
-  // 删除角色
-  const stmt = db.prepare('DELETE FROM roles WHERE id = ?')
-  stmt.run([id])
+  // 逻辑删除角色
+  const stmt = db.prepare('UPDATE roles SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([deletedBy || null, id])
   stmt.free()
 
   save()
@@ -213,13 +216,13 @@ function deleteRole(id) {
 }
 
 /**
- * 获取角色的权限列表
+ * 获取角色的权限列表（排除已删除的）
  * @param {number} roleId - 角色ID
  * @returns {Array} 权限代码列表
  */
 function getRolePermissions(roleId) {
   const db = getDb()
-  const stmt = db.prepare('SELECT permission_code FROM role_permissions WHERE role_id = ?')
+  const stmt = db.prepare('SELECT permission_code FROM role_permissions WHERE role_id = ? AND is_deleted = 0')
   stmt.bind([roleId])
   const permissions = []
   while (stmt.step()) {
@@ -233,19 +236,20 @@ function getRolePermissions(roleId) {
  * 设置角色的权限
  * @param {number} roleId - 角色ID
  * @param {Array} permissionCodes - 权限代码列表
+ * @param {number} createdBy - 创建人ID
  * @returns {boolean} 设置成功返回true
  */
-function setRolePermissions(roleId, permissionCodes) {
+function setRolePermissions(roleId, permissionCodes, createdBy) {
   const db = getDb()
 
-  // 删除原有权限
-  const delStmt = db.prepare('DELETE FROM role_permissions WHERE role_id = ?')
+  // 逻辑删除原有权限
+  const delStmt = db.prepare('UPDATE role_permissions SET is_deleted = 1 WHERE role_id = ?')
   delStmt.run([roleId])
   delStmt.free()
 
   // 添加新权限
-  const stmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
-  permissionCodes.forEach(code => stmt.run([roleId, code]))
+  const stmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code, created_by, is_deleted) VALUES (?, ?, ?, 0)')
+  permissionCodes.forEach(code => stmt.run([roleId, code, createdBy || null]))
   stmt.free()
 
   save()
@@ -296,21 +300,34 @@ function setUserRoles(userId, roleIds) {
  * 为用户添加单个角色
  * @param {number} userId - 用户ID
  * @param {number} roleId - 角色ID
+ * @param {number} createdBy - 创建人ID
  * @returns {boolean} 添加成功返回true
  */
-function addUserRole(userId, roleId) {
+function addUserRole(userId, roleId, createdBy) {
   const db = getDb()
 
-  // 检查是否已有该角色
-  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM user_roles WHERE user_id = ? AND role_id = ?')
+  // 检查是否已有该角色（包括已删除的）
+  const checkStmt = db.prepare('SELECT id, is_deleted FROM user_roles WHERE user_id = ? AND role_id = ?')
   checkStmt.bind([userId, roleId])
   checkStmt.step()
-  const count = Number(checkStmt.getAsObject().c)
+  const existing = checkStmt.getAsObject()
   checkStmt.free()
 
-  if (count === 0) {
-    const stmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)')
-    stmt.run([userId, roleId])
+  if (existing) {
+    if (existing.is_deleted === 0) {
+      // 已存在且未删除，无需操作
+      return true
+    } else {
+      // 已存在但已删除，恢复它
+      const stmt = db.prepare('UPDATE user_roles SET is_deleted = 0, created_by = ? WHERE id = ?')
+      stmt.run([createdBy || null, existing.id])
+      stmt.free()
+      save()
+    }
+  } else {
+    // 不存在，新增
+    const stmt = db.prepare('INSERT INTO user_roles (user_id, role_id, created_by, is_deleted) VALUES (?, ?, ?, 0)')
+    stmt.run([userId, roleId, createdBy || null])
     stmt.free()
     save()
   }
@@ -319,7 +336,7 @@ function addUserRole(userId, roleId) {
 }
 
 /**
- * 移除用户的单个角色
+ * 移除用户的单个角色（逻辑删除）
  * @param {number} userId - 用户ID
  * @param {number} roleId - 角色ID
  * @returns {boolean} 移除成功返回true
@@ -327,7 +344,7 @@ function addUserRole(userId, roleId) {
 function removeUserRole(userId, roleId) {
   const db = getDb()
 
-  const stmt = db.prepare('DELETE FROM user_roles WHERE user_id = ? AND role_id = ?')
+  const stmt = db.prepare('UPDATE user_roles SET is_deleted = 1 WHERE user_id = ? AND role_id = ?')
   stmt.run([userId, roleId])
   stmt.free()
 
@@ -336,12 +353,12 @@ function removeUserRole(userId, roleId) {
 }
 
 /**
- * 获取所有权限列表
+ * 获取所有权限列表（排除已删除的）
  * @returns {Array} 权限列表
  */
 function getAllPermissions() {
   const db = getDb()
-  const stmt = db.prepare('SELECT * FROM permissions ORDER BY type, code')
+  const stmt = db.prepare('SELECT * FROM permissions WHERE is_deleted = 0 ORDER BY type, code')
   const permissions = []
   while (stmt.step()) {
     permissions.push(stmt.getAsObject())
@@ -351,7 +368,7 @@ function getAllPermissions() {
 }
 
 /**
- * 获取角色的用户列表
+ * 获取角色的用户列表（排除已删除的）
  * @param {number} roleId - 角色ID
  * @returns {Array} 用户信息列表
  */
@@ -363,7 +380,7 @@ function getRoleUsers(roleId) {
     FROM user_roles ur
     JOIN employees e ON ur.user_id = e.id
     LEFT JOIN departments d ON e.department_id = d.id
-    WHERE ur.role_id = ?
+    WHERE ur.role_id = ? AND ur.is_deleted = 0 AND e.is_deleted = 0
   `)
   stmt.bind([roleId])
   const users = []

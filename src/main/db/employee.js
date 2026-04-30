@@ -15,7 +15,7 @@ const { getUserPermissions, getUserRoles, isSuperAdmin } = require('./permission
 function login(account, password) {
   const db = getDb()
   console.log('[DB] login attempt:', account)
-  const stmt = db.prepare('SELECT id, name, account, position FROM employees WHERE account = ? AND password = ?')
+  const stmt = db.prepare('SELECT id, name, account, position FROM employees WHERE account = ? AND password = ? AND is_deleted = 0')
   stmt.bind([account, password])
   let user = null
   if (stmt.step()) {
@@ -33,14 +33,15 @@ function login(account, password) {
 /**
  * 新增员工
  * @param {Object} data - 员工数据
+ * @param {number} createdBy - 创建人ID
  * @returns {number} 新增员工的ID
  */
-function addEmployee(data) {
+function addEmployee(data, createdBy) {
   const db = getDb()
   const stmt = db.prepare(
-    'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password, created_by, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
   )
-  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password || '123456'])
+  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password || '123456', createdBy || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
@@ -51,7 +52,7 @@ function addEmployee(data) {
 }
 
 /**
- * 获取所有员工列表（包含部门名称和头像）
+ * 获取所有员工列表（包含部门名称和头像，排除已删除的）
  * @returns {Array} 员工列表
  */
 function getAllEmployees() {
@@ -60,6 +61,7 @@ function getAllEmployees() {
     SELECT e.id, e.name, e.account, e.gender, e.age, e.phone, e.email, e.department_id, e.position, e.salary, e.created_at, e.avatar, d.name as department_name, d.path_names as department_path
     FROM employees e
     LEFT JOIN departments d ON e.department_id = d.id
+    WHERE e.is_deleted = 0
     ORDER BY e.created_at DESC
   `)
   const items = []
@@ -69,7 +71,7 @@ function getAllEmployees() {
 }
 
 /**
- * 根据ID获取员工详情
+ * 根据ID获取员工详情（排除已删除的）
  * @param {number} id - 员工ID
  * @returns {Object|null} 员工信息
  */
@@ -79,7 +81,7 @@ function getEmployeeById(id) {
     SELECT e.id, e.name, e.account, e.gender, e.age, e.phone, e.email, e.department_id, e.position, e.salary, e.created_at, d.name as department_name, d.path_names as department_path
     FROM employees e
     LEFT JOIN departments d ON e.department_id = d.id
-    WHERE e.id = ?
+    WHERE e.id = ? AND e.is_deleted = 0
   `)
   stmt.bind([id])
   let item = null
@@ -92,14 +94,15 @@ function getEmployeeById(id) {
  * 更新员工信息
  * @param {number} id - 员工ID
  * @param {Object} data - 员工数据
+ * @param {number} updatedBy - 修改人ID
  * @returns {boolean} 更新成功返回true
  */
-function updateEmployee(id, data) {
+function updateEmployee(id, data, updatedBy) {
   const db = getDb()
   const stmt = db.prepare(
-    'UPDATE employees SET name = ?, account = ?, gender = ?, age = ?, phone = ?, email = ?, department_id = ?, position = ?, salary = ?, password = ? WHERE id = ?'
+    'UPDATE employees SET name = ?, account = ?, gender = ?, age = ?, phone = ?, email = ?, department_id = ?, position = ?, salary = ?, password = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?'
   )
-  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password, id])
+  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password, updatedBy || null, id])
   stmt.free()
   save()
   return true
@@ -109,26 +112,28 @@ function updateEmployee(id, data) {
  * 更新员工密码
  * @param {number} id - 员工ID
  * @param {string} password - 新密码
+ * @param {number} updatedBy - 修改人ID
  * @returns {boolean} 更新成功返回true
  */
-function updatePassword(id, password) {
+function updatePassword(id, password, updatedBy) {
   const db = getDb()
-  const stmt = db.prepare('UPDATE employees SET password = ? WHERE id = ?')
-  stmt.run([password, id])
+  const stmt = db.prepare('UPDATE employees SET password = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([password, updatedBy || null, id])
   stmt.free()
   save()
   return true
 }
 
 /**
- * 删除员工
+ * 删除员工（逻辑删除）
  * @param {number} id - 员工ID
+ * @param {number} deletedBy - 删除人ID
  * @returns {boolean} 删除成功返回true
  */
-function deleteEmployee(id) {
+function deleteEmployee(id, deletedBy) {
   const db = getDb()
-  const stmt = db.prepare('DELETE FROM employees WHERE id = ?')
-  stmt.run([id])
+  const stmt = db.prepare('UPDATE employees SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([deletedBy || null, id])
   stmt.free()
   save()
   return true
@@ -163,25 +168,26 @@ function generateDefaultAvatar(name) {
  * 更新员工头像
  * @param {number} id - 员工ID
  * @param {string} avatarBase64 - 头像Base64数据
+ * @param {number} updatedBy - 修改人ID
  * @returns {boolean} 更新成功返回true
  */
-function updateAvatar(id, avatarBase64) {
+function updateAvatar(id, avatarBase64, updatedBy) {
   const db = getDb()
-  const stmt = db.prepare('UPDATE employees SET avatar = ? WHERE id = ?')
-  stmt.run([avatarBase64, id])
+  const stmt = db.prepare('UPDATE employees SET avatar = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([avatarBase64, updatedBy || null, id])
   stmt.free()
   save()
   return true
 }
 
 /**
- * 获取员工头像
+ * 获取员工头像（排除已删除的）
  * @param {number} id - 员工ID
  * @returns {string|null} 头像Base64数据，无头像返回null
  */
 function getAvatar(id) {
   const db = getDb()
-  const stmt = db.prepare('SELECT avatar, name FROM employees WHERE id = ?')
+  const stmt = db.prepare('SELECT avatar, name FROM employees WHERE id = ? AND is_deleted = 0')
   stmt.bind([id])
   let result = null
   if (stmt.step()) {

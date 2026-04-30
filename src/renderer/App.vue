@@ -73,11 +73,11 @@
         </div>
 
         <!-- 内容区 -->
-        <!-- <el-scrollbar class="content-scrollbar"> -->
-          <div class="content-body">
-            <router-view />
-          </div>
-        <!-- </el-scrollbar> -->
+        <div class="content-body">
+          <!-- 无权限提示 -->
+          <el-empty v-if="menuItems.length === 0" description="您没有任何菜单权限，请联系管理员" />
+          <router-view v-else />
+        </div>
       </div>
     </div>
   </div>

@@ -106,12 +106,16 @@ function initDepartmentTables() {
   db.run(`
     CREATE TABLE IF NOT EXISTS departments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT NOT NULL UNIQUE,
+      name TEXT NOT NULL,
       description TEXT,
       parent_id INTEGER DEFAULT 0,
       path_ids TEXT,
       path_names TEXT,
-      created_at INTEGER DEFAULT (unixepoch())
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
 
@@ -136,6 +140,34 @@ function initDepartmentTables() {
   } catch (e) {
     // path_names 列已存在
   }
+
+  try {
+    db.run('ALTER TABLE departments ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] departments.is_deleted added')
+  } catch (e) {
+    // is_deleted 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE departments ADD COLUMN created_by INTEGER')
+    console.log('[DB] departments.created_by added')
+  } catch (e) {
+    // created_by 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE departments ADD COLUMN updated_by INTEGER')
+    console.log('[DB] departments.updated_by added')
+  } catch (e) {
+    // updated_by 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE departments ADD COLUMN updated_at INTEGER')
+    console.log('[DB] departments.updated_at added')
+  } catch (e) {
+    // updated_at 列已存在
+  }
 }
 
 /**
@@ -144,14 +176,14 @@ function initDepartmentTables() {
 function initDepartmentSeedData() {
   const db = getDb()
 
-  // 检查是否已有数据
-  const deptStmt = db.prepare('SELECT COUNT(*) as c FROM departments')
+  // 检查是否已有数据（排除已删除的）
+  const deptStmt = db.prepare('SELECT COUNT(*) as c FROM departments WHERE is_deleted = 0')
   deptStmt.step()
   const deptCount = deptStmt.getAsObject()
   deptStmt.free()
 
   if (Number(deptCount.c) === 0) {
-    const stmt = db.prepare('INSERT INTO departments (name, description, parent_id) VALUES (?, ?, ?)')
+    const stmt = db.prepare('INSERT INTO departments (name, description, parent_id, is_deleted) VALUES (?, ?, ?, 0)')
     // 第一层：总公司
     stmt.run(['xx公司', '总公司', 0])
     // 第二层：一级部门
@@ -199,7 +231,7 @@ function initEmployeeTables() {
     CREATE TABLE IF NOT EXISTS employees (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      account TEXT NOT NULL UNIQUE,
+      account TEXT NOT NULL,
       gender TEXT,
       age INTEGER,
       phone TEXT,
@@ -208,7 +240,13 @@ function initEmployeeTables() {
       position TEXT,
       salary REAL,
       password TEXT,
-      created_at INTEGER DEFAULT (unixepoch())
+      avatar TEXT,
+      role_code TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
 
@@ -233,6 +271,41 @@ function initEmployeeTables() {
   } catch (e) {
     // avatar 列已存在
   }
+
+  try {
+    db.run('ALTER TABLE employees ADD COLUMN role_code TEXT')
+    console.log('[DB] employees.role_code added')
+  } catch (e) {
+    // role_code 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE employees ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] employees.is_deleted added')
+  } catch (e) {
+    // is_deleted 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE employees ADD COLUMN created_by INTEGER')
+    console.log('[DB] employees.created_by added')
+  } catch (e) {
+    // created_by 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE employees ADD COLUMN updated_by INTEGER')
+    console.log('[DB] employees.updated_by added')
+  } catch (e) {
+    // updated_by 列已存在
+  }
+
+  try {
+    db.run('ALTER TABLE employees ADD COLUMN updated_at INTEGER')
+    console.log('[DB] employees.updated_at added')
+  } catch (e) {
+    // updated_at 列已存在
+  }
 }
 
 /**
@@ -241,30 +314,30 @@ function initEmployeeTables() {
 function initEmployeeSeedData() {
   const db = getDb()
 
-  // 初始化超级管理员
-  const adminStmt = db.prepare("SELECT COUNT(*) as c FROM employees WHERE account = 'sysadmin'")
+  // 初始化超级管理员（排除已删除的）
+  const adminStmt = db.prepare("SELECT COUNT(*) as c FROM employees WHERE account = 'sysadmin' AND is_deleted = 0")
   adminStmt.step()
   const adminCount = Number(adminStmt.getAsObject().c)
   adminStmt.free()
 
   if (adminCount === 0) {
     const stmt = db.prepare(
-      'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
     )
     stmt.run(['系统管理员', 'sysadmin', '男', 30, '', '', 1, '系统管理员', 0, '123456'])
     stmt.free()
     console.log('[DB] sysadmin seeded')
   }
 
-  // 初始化其他员工种子数据
-  const empCheckStmt = db.prepare("SELECT COUNT(*) as c FROM employees WHERE account != 'sysadmin'")
+  // 初始化其他员工种子数据（排除已删除的）
+  const empCheckStmt = db.prepare("SELECT COUNT(*) as c FROM employees WHERE account != 'sysadmin' AND is_deleted = 0")
   empCheckStmt.step()
   const otherEmpCount = Number(empCheckStmt.getAsObject().c)
   empCheckStmt.free()
 
   if (otherEmpCount === 0) {
     const stmt = db.prepare(
-      'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
     )
     seedEmployees.forEach(emp => stmt.run(emp))
     stmt.free()
@@ -284,10 +357,14 @@ function initDictTables() {
   db.run(`
     CREATE TABLE IF NOT EXISTS dict_types (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
-      created_at INTEGER DEFAULT (unixepoch())
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
 
@@ -299,9 +376,54 @@ function initDictTables() {
       label TEXT NOT NULL,
       value TEXT NOT NULL,
       sort INTEGER DEFAULT 0,
-      created_at INTEGER DEFAULT (unixepoch())
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
+
+  // 兼容旧版字段
+  try {
+    db.run('ALTER TABLE dict_types ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] dict_types.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_types ADD COLUMN created_by INTEGER')
+    console.log('[DB] dict_types.created_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_types ADD COLUMN updated_by INTEGER')
+    console.log('[DB] dict_types.updated_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_types ADD COLUMN updated_at INTEGER')
+    console.log('[DB] dict_types.updated_at added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_items ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] dict_items.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_items ADD COLUMN created_by INTEGER')
+    console.log('[DB] dict_items.created_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_items ADD COLUMN updated_by INTEGER')
+    console.log('[DB] dict_items.updated_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE dict_items ADD COLUMN updated_at INTEGER')
+    console.log('[DB] dict_items.updated_at added')
+  } catch (e) {}
 }
 
 /**
@@ -310,38 +432,38 @@ function initDictTables() {
 function initDictSeedData() {
   const db = getDb()
 
-  // 初始化性别字典数据
-  const typeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'gender'")
+  // 初始化性别字典数据（排除已删除的）
+  const typeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'gender' AND is_deleted = 0")
   typeCheckStmt.step()
   const typeCount = Number(typeCheckStmt.getAsObject().c)
   typeCheckStmt.free()
 
   if (typeCount === 0) {
-    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description) VALUES (?, ?, ?)')
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
     typeStmt.run(['gender', '性别', '员工性别选项'])
     typeStmt.free()
 
-    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort) VALUES (?, ?, ?, ?)')
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
     itemStmt.run(['gender', '男', '男', 1])
     itemStmt.run(['gender', '女', '女', 2])
     itemStmt.free()
     console.log('[DB] gender dictionary seeded')
   }
 
-  // 初始化职位字典数据（从员工种子数据中提取）
-  const positionCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'position'")
+  // 初始化职位字典数据（从员工种子数据中提取，排除已删除的）
+  const positionCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'position' AND is_deleted = 0")
   positionCheckStmt.step()
   const positionCount = Number(positionCheckStmt.getAsObject().c)
   positionCheckStmt.free()
 
   if (positionCount === 0) {
-    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description) VALUES (?, ?, ?)')
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
     typeStmt.run(['position', '职位', '员工职位选项'])
     typeStmt.free()
 
     // 从员工种子数据中提取职位
     const positions = extractPositionsFromEmployees()
-    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort) VALUES (?, ?, ?, ?)')
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
     positions.forEach((position, index) => {
       itemStmt.run(['position', position, position, index + 1])
     })
@@ -362,11 +484,15 @@ function initPermissionTables() {
   db.run(`
     CREATE TABLE IF NOT EXISTS roles (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL,
       name TEXT NOT NULL,
       description TEXT,
       is_system INTEGER DEFAULT 0,
-      created_at INTEGER DEFAULT (unixepoch())
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
 
@@ -374,11 +500,15 @@ function initPermissionTables() {
   db.run(`
     CREATE TABLE IF NOT EXISTS permissions (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      code TEXT NOT NULL UNIQUE,
+      code TEXT NOT NULL,
       name TEXT NOT NULL,
       type TEXT NOT NULL,
       description TEXT,
-      created_at INTEGER DEFAULT (unixepoch())
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
     )
   `)
 
@@ -388,6 +518,8 @@ function initPermissionTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       role_id INTEGER NOT NULL,
       permission_code TEXT NOT NULL,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
       created_at INTEGER DEFAULT (unixepoch()),
       UNIQUE(role_id, permission_code)
     )
@@ -399,17 +531,75 @@ function initPermissionTables() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id INTEGER NOT NULL,
       role_id INTEGER NOT NULL,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
       created_at INTEGER DEFAULT (unixepoch())
     )
   `)
 
-  // 添加员工表角色字段（兼容旧版）
+  // 兼容旧版字段 - roles
   try {
-    db.run('ALTER TABLE employees ADD COLUMN role_code TEXT')
-    console.log('[DB] employees.role_code added')
-  } catch (e) {
-    // role_code 列已存在
-  }
+    db.run('ALTER TABLE roles ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] roles.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE roles ADD COLUMN created_by INTEGER')
+    console.log('[DB] roles.created_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE roles ADD COLUMN updated_by INTEGER')
+    console.log('[DB] roles.updated_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE roles ADD COLUMN updated_at INTEGER')
+    console.log('[DB] roles.updated_at added')
+  } catch (e) {}
+
+  // 兼容旧版字段 - permissions
+  try {
+    db.run('ALTER TABLE permissions ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] permissions.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE permissions ADD COLUMN created_by INTEGER')
+    console.log('[DB] permissions.created_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE permissions ADD COLUMN updated_by INTEGER')
+    console.log('[DB] permissions.updated_by added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE permissions ADD COLUMN updated_at INTEGER')
+    console.log('[DB] permissions.updated_at added')
+  } catch (e) {}
+
+  // 兼容旧版字段 - role_permissions
+  try {
+    db.run('ALTER TABLE role_permissions ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] role_permissions.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE role_permissions ADD COLUMN created_by INTEGER')
+    console.log('[DB] role_permissions.created_by added')
+  } catch (e) {}
+
+  // 兼容旧版字段 - user_roles
+  try {
+    db.run('ALTER TABLE user_roles ADD COLUMN is_deleted INTEGER DEFAULT 0')
+    console.log('[DB] user_roles.is_deleted added')
+  } catch (e) {}
+
+  try {
+    db.run('ALTER TABLE user_roles ADD COLUMN created_by INTEGER')
+    console.log('[DB] user_roles.created_by added')
+  } catch (e) {}
 }
 
 /**

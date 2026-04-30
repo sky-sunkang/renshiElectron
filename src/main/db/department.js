@@ -35,12 +35,13 @@ function recalcAllDeptPaths() {
  * @param {string} name - 部门名称
  * @param {string} description - 部门描述
  * @param {number} parent_id - 上级部门ID
+ * @param {number} createdBy - 创建人ID
  * @returns {number} 新增部门的ID
  */
-function addDepartment(name, description, parent_id) {
+function addDepartment(name, description, parent_id, createdBy) {
   const db = getDb()
-  const stmt = db.prepare('INSERT INTO departments (name, description, parent_id) VALUES (?, ?, ?)')
-  stmt.run([name, description, parent_id || 0])
+  const stmt = db.prepare('INSERT INTO departments (name, description, parent_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
+  stmt.run([name, description, parent_id || 0, createdBy || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
@@ -51,12 +52,12 @@ function addDepartment(name, description, parent_id) {
 }
 
 /**
- * 获取所有部门列表
+ * 获取所有部门列表（排除已删除的）
  * @returns {Array} 部门列表
  */
 function getAllDepartments() {
   const db = getDb()
-  const stmt = db.prepare('SELECT * FROM departments ORDER BY created_at DESC')
+  const stmt = db.prepare('SELECT * FROM departments WHERE is_deleted = 0 ORDER BY created_at DESC')
   const items = []
   while (stmt.step()) { items.push(stmt.getAsObject()) }
   stmt.free()
@@ -69,39 +70,41 @@ function getAllDepartments() {
  * @param {string} name - 部门名称
  * @param {string} description - 部门描述
  * @param {number} parent_id - 上级部门ID
+ * @param {number} updatedBy - 修改人ID
  * @returns {boolean} 更新成功返回true
  */
-function updateDepartment(id, name, description, parent_id) {
+function updateDepartment(id, name, description, parent_id, updatedBy) {
   const db = getDb()
-  const stmt = db.prepare('UPDATE departments SET name = ?, description = ?, parent_id = ? WHERE id = ?')
-  stmt.run([name, description, parent_id || 0, id])
+  const stmt = db.prepare('UPDATE departments SET name = ?, description = ?, parent_id = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([name, description, parent_id || 0, updatedBy || null, id])
   stmt.free()
   recalcAllDeptPaths()
   return true
 }
 
 /**
- * 删除部门
+ * 删除部门（逻辑删除）
  * @param {number} id - 部门ID
+ * @param {number} deletedBy - 删除人ID
  * @returns {boolean} 删除成功返回true
  */
-function deleteDepartment(id) {
+function deleteDepartment(id, deletedBy) {
   const db = getDb()
-  const stmt = db.prepare('DELETE FROM departments WHERE id = ?')
-  stmt.run([id])
+  const stmt = db.prepare('UPDATE departments SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([deletedBy || null, id])
   stmt.free()
   save()
   return true
 }
 
 /**
- * 获取指定部门的子部门列表
+ * 获取指定部门的子部门列表（排除已删除的）
  * @param {number} id - 部门ID
  * @returns {Array} 子部门列表
  */
 function getChildDepartments(id) {
   const db = getDb()
-  const stmt = db.prepare('SELECT * FROM departments WHERE parent_id = ?')
+  const stmt = db.prepare('SELECT * FROM departments WHERE parent_id = ? AND is_deleted = 0')
   stmt.bind([id])
   const items = []
   while (stmt.step()) { items.push(stmt.getAsObject()) }
