@@ -1,4 +1,4 @@
-# 员工信息管理系统（Electron + Vue3）
+# 人事管理系统（Electron + Vue3）
 
 ## 项目概述
 

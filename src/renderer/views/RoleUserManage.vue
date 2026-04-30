@@ -39,18 +39,38 @@
     <div class="user-panel">
       <div class="panel-header">
         <h3>{{ currentRole ? currentRole.name + ' - 已分配人员' : '人员配置' }}</h3>
-        <el-button
-          v-if="permStore.hasPermission('role:assignUser') && currentRole"
-          type="primary"
-          size="small"
-          @click="openEmployeeSelector"
-        >
-          + 新增人员
-        </el-button>
+        <div class="header-actions">
+          <el-button
+            v-if="permStore.hasPermission('role:assignUser') && currentRole && selectedUserIds.length > 0"
+            type="danger"
+            size="small"
+            plain
+            @click="batchRemoveUsers"
+          >
+            删除选中 ({{ selectedUserIds.length }})
+          </el-button>
+          <el-button
+            v-if="permStore.hasPermission('role:assignUser') && currentRole"
+            type="primary"
+            size="small"
+            @click="openEmployeeSelector"
+          >
+            + 新增人员
+          </el-button>
+        </div>
       </div>
       <el-scrollbar v-if="currentRole" class="user-scroll">
         <div class="user-content">
-          <el-table :data="assignedUsers" stripe border size="small" style="width: 100%">
+          <el-table
+            ref="userTableRef"
+            :data="assignedUsers"
+            stripe
+            border
+            size="small"
+            style="width: 100%"
+            @selection-change="handleSelectionChange"
+          >
+            <el-table-column type="selection" width="45" align="center" />
             <el-table-column prop="name" label="姓名" width="100" />
             <el-table-column prop="account" label="账号" width="120" />
             <el-table-column prop="department_name" label="所属部门" min-width="150" show-overflow-tooltip />
@@ -96,7 +116,8 @@
     <!-- 人员选择组件 -->
     <EmployeeSelector
       v-model="selectorVisible"
-      :exclude-ids="assignedUserIds"
+      :exclude-ids="[]"
+      :selected-ids="assignedUserIds"
       @confirm="handleEmployeeConfirm"
     />
   </div>
@@ -117,6 +138,8 @@ const currentRole = ref(null)
 // 用户数据
 const users = ref([])
 const assignedUserIds = ref([])
+const selectedUserIds = ref([])
+const userTableRef = ref()
 
 // 角色弹窗
 const roleDialogVisible = ref(false)
@@ -158,6 +181,7 @@ async function loadUsers() {
  */
 async function handleRoleChange(row) {
   currentRole.value = row
+  selectedUserIds.value = []
   if (row) {
     // 获取当前角色已分配的用户ID列表
     const roleUsers = await window.electronAPI.perm.getRoleUsers(row.id)
@@ -165,6 +189,14 @@ async function handleRoleChange(row) {
   } else {
     assignedUserIds.value = []
   }
+}
+
+/**
+ * 表格选择变化
+ * @param {Array} selection - 选中的行数据
+ */
+function handleSelectionChange(selection) {
+  selectedUserIds.value = selection.map(user => user.id)
 }
 
 /**
@@ -179,15 +211,32 @@ function openEmployeeSelector() {
  * @param {Array} selectedEmployees - 选中的员工列表
  */
 async function handleEmployeeConfirm(selectedEmployees) {
-  if (!currentRole.value || selectedEmployees.length === 0) return
+  if (!currentRole.value) return
 
   const roleId = currentRole.value.id
-  // 为选中的用户分配角色
-  for (const emp of selectedEmployees) {
-    await window.electronAPI.perm.setUserRoles(emp.id, [roleId])
+  // 获取当前已分配的用户ID
+  const currentAssignedIds = assignedUserIds.value.slice()
+  // 新选中的用户ID
+  const newSelectedIds = selectedEmployees.map(emp => emp.id)
+
+  // 需要移除的用户（原来有但现在没选中）
+  const toRemoveIds = currentAssignedIds.filter(id => !newSelectedIds.includes(id))
+  // 需要添加的用户（原来没有但现在选中了）
+  const toAddIds = newSelectedIds.filter(id => !currentAssignedIds.includes(id))
+
+  // 移除用户角色
+  for (const userId of toRemoveIds) {
+    await window.electronAPI.perm.setUserRoles(userId, [])
+  }
+  // 添加用户角色
+  for (const userId of toAddIds) {
+    await window.electronAPI.perm.setUserRoles(userId, [roleId])
   }
 
-  ElMessage.success(`成功分配 ${selectedEmployees.length} 位人员`)
+  if (toAddIds.length > 0 || toRemoveIds.length > 0) {
+    ElMessage.success(`已更新人员分配`)
+  }
+
   // 刷新已分配用户列表
   const roleUsers = await window.electronAPI.perm.getRoleUsers(roleId)
   assignedUserIds.value = roleUsers.map(user => user.id)
@@ -208,6 +257,32 @@ async function removeAssignedUser(user) {
     // 刷新已分配用户列表
     const roleUsers = await window.electronAPI.perm.getRoleUsers(currentRole.value.id)
     assignedUserIds.value = roleUsers.map(u => u.id)
+    selectedUserIds.value = []
+    // 刷新用户数据
+    await loadUsers()
+  } catch (e) {
+    if (e.message) {
+      ElMessage.error(e.message)
+    }
+  }
+}
+
+/**
+ * 批量删除已分配的用户
+ */
+async function batchRemoveUsers() {
+  if (selectedUserIds.value.length === 0) return
+  try {
+    await ElMessageBox.confirm(`确定移除选中的 ${selectedUserIds.value.length} 位人员吗？`, '提示', { type: 'warning' })
+    // 批量清空用户的角色
+    for (const userId of selectedUserIds.value) {
+      await window.electronAPI.perm.setUserRoles(userId, [])
+    }
+    ElMessage.success('移除成功')
+    // 刷新已分配用户列表
+    const roleUsers = await window.electronAPI.perm.getRoleUsers(currentRole.value.id)
+    assignedUserIds.value = roleUsers.map(u => u.id)
+    selectedUserIds.value = []
     // 刷新用户数据
     await loadUsers()
   } catch (e) {
@@ -320,6 +395,10 @@ onMounted(async () => {
   margin: 0;
   font-size: 16px;
   color: #1e293b;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 .role-scroll {
   flex: 1;

@@ -27,14 +27,29 @@
       <!-- 中间部门人员 -->
       <div class="emp-panel">
         <div class="panel-title">
-          <span>{{ currentDept ? currentDept.name + ' - 人员' : '部门人员' }}</span>
+          <el-checkbox
+            v-model="includeChildren"
+            label="包含子部门"
+            size="small"
+          />
+          <el-checkbox
+            :model-value="isAllSelected"
+            :indeterminate="isPartialSelected"
+            @change="toggleSelectAll"
+            label="全选"
+            size="small"
+          />
+        </div>
+        <div class="search-bar">
           <el-input
             v-model="searchName"
-            placeholder="搜索姓名"
+            placeholder="搜索姓名/账号"
             size="small"
             clearable
-            style="width: 120px; margin-left: 8px"
+            style="flex: 1"
+            @keyup.enter="handleSearch"
           />
+          <el-button type="primary" size="small" @click="handleSearch">搜索</el-button>
         </div>
         <el-scrollbar class="emp-scroll">
           <div class="emp-list">
@@ -42,11 +57,10 @@
               v-for="emp in filteredEmployees"
               :key="emp.id"
               class="emp-item"
-              :class="{ selected: isSelected(emp) }"
-              @click="toggleSelect(emp)"
+              :class="{ selected: isInSelectedList(emp) }"
             >
-              <el-checkbox v-model="emp.checked" @click.stop />
-              <span class="emp-name">{{ emp.name }}</span>
+              <el-checkbox :model-value="isInSelectedList(emp)" @change="toggleSelect(emp)" />
+              <span class="emp-name" @click="toggleSelect(emp)">{{ emp.name }}（{{ emp.account }}）</span>
               <el-tooltip placement="right" :show-after="300">
                 <template #content>
                   <div class="emp-tooltip">
@@ -66,12 +80,6 @@
             <div v-if="filteredEmployees.length === 0" class="emp-empty">暂无人员</div>
           </div>
         </el-scrollbar>
-        <div class="panel-footer">
-          <el-button type="primary" size="small" @click="addToSelected">
-            添加选中 ({{ currentSelection.length }})
-            <el-icon class="el-icon--right"><ArrowRight /></el-icon>
-          </el-button>
-        </div>
       </div>
 
       <!-- 右侧已选人员 -->
@@ -115,7 +123,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
-import { ArrowRight, InfoFilled, Rank, Delete } from '@element-plus/icons-vue'
+import { InfoFilled, Rank, Delete } from '@element-plus/icons-vue'
 import { useDeptStore } from '../stores/dept.js'
 import { useEmpStore } from '../stores/emp.js'
 
@@ -125,6 +133,10 @@ const props = defineProps({
     default: false
   },
   excludeIds: {
+    type: Array,
+    default: () => []
+  },
+  selectedIds: {
     type: Array,
     default: () => []
   }
@@ -145,47 +157,123 @@ const deptTreeData = computed(() => deptStore.treeData)
 const currentDept = ref(null)
 const searchName = ref('')
 const selectedList = ref([])
-
-// 当前选中的人员ID集合
-const currentSelection = computed(() => {
-  return empStore.list.filter(emp => emp.checked)
-})
+const includeChildren = ref(false)
 
 // 拖拽排序相关
 const dragIndex = ref(null)
 
-// 过滤后的员工列表（排除已选和排除项）
+/**
+ * 获取部门及其所有子部门的ID
+ */
+function getDeptAndChildrenIds(dept) {
+  if (!dept) return []
+  const ids = [dept.id]
+  function collectChildren(node) {
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        ids.push(child.id)
+        collectChildren(child)
+      })
+    }
+  }
+  collectChildren(dept)
+  return ids
+}
+
+// 过滤后的员工列表（排除指定ID，保留已选人员显示选中状态）
 const filteredEmployees = computed(() => {
   let list = empStore.list.filter(emp => {
-    // 排除已选人员
-    if (selectedList.value.some(s => s.id === emp.id)) return false
     // 排除指定ID
     if (props.excludeIds.includes(emp.id)) return false
     // 部门过滤
     if (currentDept.value) {
-      return emp.department_id === currentDept.value.id
+      if (includeChildren.value) {
+        // 包含子部门
+        const deptIds = getDeptAndChildrenIds(currentDept.value)
+        return deptIds.includes(emp.department_id)
+      } else {
+        // 仅当前部门
+        return emp.department_id === currentDept.value.id
+      }
     }
     return true
   })
-  // 姓名搜索
+  // 姓名和账号搜索
   if (searchName.value) {
-    list = list.filter(emp => emp.name && emp.name.includes(searchName.value))
+    const keyword = searchName.value.toLowerCase()
+    list = list.filter(emp => {
+      const nameMatch = emp.name && emp.name.toLowerCase().includes(keyword)
+      const accountMatch = emp.account && emp.account.toLowerCase().includes(keyword)
+      return nameMatch || accountMatch
+    })
   }
   return list
 })
 
 /**
- * 判断是否已选中
+ * 判断是否已在已选列表中
  */
-function isSelected(emp) {
-  return emp.checked === true
+function isInSelectedList(emp) {
+  return selectedList.value.some(s => s.id === emp.id)
 }
 
 /**
- * 切换选中状态
+ * 是否全选（当前过滤列表中所有人员都已选中）
+ */
+const isAllSelected = computed(() => {
+  if (filteredEmployees.value.length === 0) return false
+  return filteredEmployees.value.every(emp => isInSelectedList(emp))
+})
+
+/**
+ * 是否部分选中（有选中但未全选）
+ */
+const isPartialSelected = computed(() => {
+  if (filteredEmployees.value.length === 0) return false
+  const selectedCount = filteredEmployees.value.filter(emp => isInSelectedList(emp)).length
+  return selectedCount > 0 && selectedCount < filteredEmployees.value.length
+})
+
+/**
+ * 全选/取消全选当前过滤列表
+ */
+function toggleSelectAll(checked) {
+  if (checked) {
+    // 全选：添加所有未选中的人员
+    filteredEmployees.value.forEach(emp => {
+      if (!isInSelectedList(emp)) {
+        selectedList.value.push(emp)
+      }
+    })
+  } else {
+    // 取消全选：移除所有当前过滤列表中已选中的人员
+    const filteredIds = filteredEmployees.value.map(emp => emp.id)
+    selectedList.value = selectedList.value.filter(emp => !filteredIds.includes(emp.id))
+  }
+}
+
+/**
+ * 切换选中状态（直接添加/移除）
  */
 function toggleSelect(emp) {
-  emp.checked = !emp.checked
+  console.log('[EmployeeSelector] toggleSelect:', emp.name, emp.id)
+  const index = selectedList.value.findIndex(s => s.id === emp.id)
+  if (index > -1) {
+    // 已选中则移除
+    selectedList.value.splice(index, 1)
+    console.log('[EmployeeSelector] removed, selectedList:', selectedList.value.length)
+  } else {
+    // 未选中则添加
+    selectedList.value.push(emp)
+    console.log('[EmployeeSelector] added, selectedList:', selectedList.value.length)
+  }
+}
+
+/**
+ * 搜索按钮点击（触发重新计算 filteredEmployees）
+ */
+function handleSearch() {
+  // 搜索逻辑已通过 computed 自动处理，此处仅用于触发交互反馈
 }
 
 /**
@@ -216,21 +304,6 @@ function handleDrop(event, dropIndex) {
  */
 function handleNodeClick(data) {
   currentDept.value = data
-}
-
-/**
- * 添加到已选
- */
-function addToSelected() {
-  const selected = currentSelection.value
-  if (selected.length === 0) {
-    return
-  }
-  selectedList.value.push(...selected)
-  // 清空当前选择
-  empStore.list.forEach(emp => {
-    emp.checked = false
-  })
 }
 
 /**
@@ -281,15 +354,28 @@ onMounted(async () => {
   }
 })
 
-// 监听visible变化，打开时重置
-watch(visible, (val) => {
+// 监听visible变化，打开时重置并加载数据
+watch(visible, async (val) => {
   if (val) {
-    selectedList.value = []
+    // 根据 selectedIds 初始化已选列表
+    if (props.selectedIds.length > 0) {
+      selectedList.value = empStore.list.filter(emp => props.selectedIds.includes(emp.id))
+    } else {
+      selectedList.value = []
+    }
+    // 确保数据已加载
+    if (empStore.list.length === 0) {
+      await empStore.loadAll()
+      // 加载后重新初始化已选列表
+      if (props.selectedIds.length > 0) {
+        selectedList.value = empStore.list.filter(emp => props.selectedIds.includes(emp.id))
+      }
+    }
+    if (deptTreeData.value.length === 0) {
+      await deptStore.loadAll()
+    }
     currentDept.value = deptTreeData.value[0] || null
-    // 清空所有选中状态
-    empStore.list.forEach(emp => {
-      emp.checked = false
-    })
+    console.log('[EmployeeSelector] opened, empStore.list:', empStore.list.length, 'currentDept:', currentDept.value?.name)
     nextTick(() => {
       treeRef.value?.setCurrentKey(currentDept.value?.id)
     })
@@ -323,13 +409,21 @@ watch(visible, (val) => {
   width: 260px;
 }
 .panel-title {
-  padding: 12px 16px;
+  padding: 10px 12px;
   font-weight: 500;
   color: #1e293b;
   border-bottom: 1px solid #e4e7ed;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.search-bar {
+  padding: 8px 12px;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 .dept-scroll,
@@ -339,17 +433,18 @@ watch(visible, (val) => {
   min-height: 0;
 }
 .emp-list {
-  padding: 8px;
+  padding: 6px;
 }
 .emp-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 2px 6px;
   border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.2s;
   border: 1px solid transparent;
+  margin-bottom: 2px;
 }
 .emp-item:hover {
   background-color: #f5f7fa;
@@ -357,6 +452,10 @@ watch(visible, (val) => {
 .emp-item.selected {
   background-color: #ecf5ff;
   border-color: #409eff;
+}
+.emp-item.selected .emp-name {
+  color: #409eff;
+  font-weight: 500;
 }
 .emp-name {
   flex: 1;
@@ -385,16 +484,16 @@ watch(visible, (val) => {
   white-space: nowrap;
 }
 .selected-list {
-  padding: 8px;
+  padding: 6px;
 }
 .selected-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 6px 10px;
   border-radius: 4px;
   background-color: #f5f7fa;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   cursor: move;
   transition: all 0.2s;
 }

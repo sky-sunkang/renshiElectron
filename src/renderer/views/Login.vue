@@ -3,7 +3,7 @@
     <div class="login-box">
       <div class="login-header">
         <el-icon :size="48" color="#3b82f6"><UserFilled /></el-icon>
-        <h2>员工信息管理系统</h2>
+        <h2>人事管理系统</h2>
         <p>请登录您的账户</p>
       </div>
 

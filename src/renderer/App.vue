@@ -4,7 +4,7 @@
     <!-- 自定义标题栏 -->
     <div class="title-bar">
       <div class="title-bar-drag">
-        <span class="app-title">员工信息管理系统</span>
+        <span class="app-title">人事管理系统</span>
       </div>
       <div class="window-controls">
         <el-button text class="win-btn" @click="minimizeWindow">
@@ -30,7 +30,7 @@
           <div class="logo">
             <el-icon :size="28" color="#3b82f6"><UserFilled /></el-icon>
           </div>
-          <div class="sidebar-title">员工信息管理系统</div>
+          <div class="sidebar-title">人事管理系统</div>
         </div>
 
         <el-scrollbar class="sidebar-scrollbar">
