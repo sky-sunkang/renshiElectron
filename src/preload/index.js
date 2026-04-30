@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getRolePermissions: (roleId) => ipcRenderer.invoke('perm:getRolePermissions', roleId),
     setRolePermissions: (roleId, codes) => ipcRenderer.invoke('perm:setRolePermissions', roleId, codes),
     setUserRoles: (userId, roleIds) => ipcRenderer.invoke('perm:setUserRoles', userId, roleIds),
+    addUserRole: (userId, roleId) => ipcRenderer.invoke('perm:addUserRole', userId, roleId),
+    removeUserRole: (userId, roleId) => ipcRenderer.invoke('perm:removeUserRole', userId, roleId),
     getRoleUsers: (roleId) => ipcRenderer.invoke('perm:getRoleUsers', roleId),
     getAllPermissions: () => ipcRenderer.invoke('perm:getAllPermissions'),
     hasPermission: (userId, code) => ipcRenderer.invoke('perm:hasPermission', userId, code),

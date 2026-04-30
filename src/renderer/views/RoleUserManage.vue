@@ -27,7 +27,7 @@
           </el-table-column>
           <el-table-column label="操作" width="140" align="center" fixed="right">
             <template #default="scope">
-              <el-button v-if="permStore.hasPermission('role:edit') && !scope.row.is_system" link type="primary" size="small" @click="openRoleDialog(scope.row)">编辑</el-button>
+              <el-button v-if="permStore.hasPermission('role:edit')" link type="primary" size="small" @click="openRoleDialog(scope.row)">编辑</el-button>
               <el-button v-if="permStore.hasPermission('role:delete') && !scope.row.is_system" link type="danger" size="small" @click="removeRole(scope.row)">删除</el-button>
             </template>
           </el-table-column>
@@ -224,13 +224,13 @@ async function handleEmployeeConfirm(selectedEmployees) {
   // 需要添加的用户（原来没有但现在选中了）
   const toAddIds = newSelectedIds.filter(id => !currentAssignedIds.includes(id))
 
-  // 移除用户角色
+  // 移除用户的当前角色（不影响其他角色）
   for (const userId of toRemoveIds) {
-    await window.electronAPI.perm.setUserRoles(userId, [])
+    await window.electronAPI.perm.removeUserRole(userId, roleId)
   }
-  // 添加用户角色
+  // 为用户添加当前角色（不影响其他角色）
   for (const userId of toAddIds) {
-    await window.electronAPI.perm.setUserRoles(userId, [roleId])
+    await window.electronAPI.perm.addUserRole(userId, roleId)
   }
 
   if (toAddIds.length > 0 || toRemoveIds.length > 0) {
@@ -251,8 +251,8 @@ async function handleEmployeeConfirm(selectedEmployees) {
 async function removeAssignedUser(user) {
   try {
     await ElMessageBox.confirm(`确定将「${user.name}」从该角色移除吗？`, '提示', { type: 'warning' })
-    // 清空该用户的角色
-    await window.electronAPI.perm.setUserRoles(user.id, [])
+    // 移除用户的当前角色（不影响其他角色）
+    await window.electronAPI.perm.removeUserRole(user.id, currentRole.value.id)
     ElMessage.success('移除成功')
     // 刷新已分配用户列表
     const roleUsers = await window.electronAPI.perm.getRoleUsers(currentRole.value.id)
@@ -274,9 +274,9 @@ async function batchRemoveUsers() {
   if (selectedUserIds.value.length === 0) return
   try {
     await ElMessageBox.confirm(`确定移除选中的 ${selectedUserIds.value.length} 位人员吗？`, '提示', { type: 'warning' })
-    // 批量清空用户的角色
+    // 批量移除用户的当前角色（不影响其他角色）
     for (const userId of selectedUserIds.value) {
-      await window.electronAPI.perm.setUserRoles(userId, [])
+      await window.electronAPI.perm.removeUserRole(userId, currentRole.value.id)
     }
     ElMessage.success('移除成功')
     // 刷新已分配用户列表

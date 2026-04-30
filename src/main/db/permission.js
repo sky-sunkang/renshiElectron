@@ -72,11 +72,25 @@ function hasPermission(userId, permissionCode) {
 
 /**
  * 检查用户是否为超级管理员
+ * 系统管理员账号（sysadmin）始终是超级管理员
  * @param {number} userId - 用户ID
  * @returns {boolean} 是否为超级管理员
  */
 function isSuperAdmin(userId) {
   const db = getDb()
+  // 先检查是否为系统管理员账号
+  const accountStmt = db.prepare('SELECT account FROM employees WHERE id = ?')
+  accountStmt.bind([userId])
+  accountStmt.step()
+  const accountObj = accountStmt.getAsObject()
+  accountStmt.free()
+
+  // 系统管理员账号始终是超级管理员
+  if (accountObj && accountObj.account === 'sysadmin') {
+    return true
+  }
+
+  // 其他用户检查是否有 sysadmin 角色
   const stmt = db.prepare(`
     SELECT COUNT(*) as c
     FROM user_roles ur
@@ -279,6 +293,49 @@ function setUserRoles(userId, roleIds) {
 }
 
 /**
+ * 为用户添加单个角色
+ * @param {number} userId - 用户ID
+ * @param {number} roleId - 角色ID
+ * @returns {boolean} 添加成功返回true
+ */
+function addUserRole(userId, roleId) {
+  const db = getDb()
+
+  // 检查是否已有该角色
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM user_roles WHERE user_id = ? AND role_id = ?')
+  checkStmt.bind([userId, roleId])
+  checkStmt.step()
+  const count = Number(checkStmt.getAsObject().c)
+  checkStmt.free()
+
+  if (count === 0) {
+    const stmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)')
+    stmt.run([userId, roleId])
+    stmt.free()
+    save()
+  }
+
+  return true
+}
+
+/**
+ * 移除用户的单个角色
+ * @param {number} userId - 用户ID
+ * @param {number} roleId - 角色ID
+ * @returns {boolean} 移除成功返回true
+ */
+function removeUserRole(userId, roleId) {
+  const db = getDb()
+
+  const stmt = db.prepare('DELETE FROM user_roles WHERE user_id = ? AND role_id = ?')
+  stmt.run([userId, roleId])
+  stmt.free()
+
+  save()
+  return true
+}
+
+/**
  * 获取所有权限列表
  * @returns {Array} 权限列表
  */
@@ -330,6 +387,8 @@ module.exports = {
   getRolePermissions,
   setRolePermissions,
   setUserRoles,
+  addUserRole,
+  removeUserRole,
   getAllPermissions,
   getRoleUsers
 }

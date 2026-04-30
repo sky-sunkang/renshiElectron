@@ -631,7 +631,7 @@ function initDefaultUsersForRoles() {
     roleStmt.free()
 
     if (userId && roleId) {
-      // 检查是否已分配角色
+      // 检查该用户是否已有此角色
       const checkStmt = db.prepare('SELECT COUNT(*) as c FROM user_roles WHERE user_id = ? AND role_id = ?')
       checkStmt.bind([userId, roleId])
       checkStmt.step()
@@ -639,15 +639,10 @@ function initDefaultUsersForRoles() {
       checkStmt.free()
 
       if (count === 0) {
-        // 分配角色
+        // 分配角色（不删除其他已有角色）
         const assignStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)')
         assignStmt.run([userId, roleId])
         assignStmt.free()
-
-        // 更新用户角色代码
-        const updateStmt = db.prepare('UPDATE employees SET role_code = ? WHERE id = ?')
-        updateStmt.run([mapping.roleCode, userId])
-        updateStmt.free()
 
         console.log(`[DB] ${mapping.account} assigned role ${mapping.roleCode}`)
       }

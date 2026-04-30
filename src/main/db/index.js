@@ -65,6 +65,8 @@ module.exports = {
   getRolePermissions: permission.getRolePermissions,
   setRolePermissions: permission.setRolePermissions,
   setUserRoles: permission.setUserRoles,
+  addUserRole: permission.addUserRole,
+  removeUserRole: permission.removeUserRole,
   getRoleUsers: permission.getRoleUsers,
   getAllPermissions: permission.getAllPermissions,
   getUserPermissions: permission.getUserPermissions,
