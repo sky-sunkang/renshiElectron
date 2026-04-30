@@ -1,6 +1,6 @@
 {
   "appId": "com.example.electron-vue-app",
-  "productName": "ElectronVueApp",
+  "productName": "员工信息管理系统",
   "directories": {
     "output": "release"
   },
@@ -9,12 +9,15 @@
     "resources/**/*"
   ],
   "mac": {
-    "target": ["dmg", "zip"]
+    "target": ["dmg", "zip"],
+    "icon": "resources/icon.png"
   },
   "win": {
-    "target": ["nsis", "zip"]
+    "target": ["nsis", "zip"],
+    "icon": "resources/icon.png"
   },
   "linux": {
-    "target": ["AppImage", "deb"]
+    "target": ["AppImage", "deb"],
+    "icon": "resources/icon.png"
   }
 }

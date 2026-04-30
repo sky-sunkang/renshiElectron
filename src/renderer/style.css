@@ -16,3 +16,13 @@ body {
 #app {
   width: 100%;
 }
+
+/* 调整弹框位置，避免被自定义标题栏遮挡 */
+.el-message {
+  top: 48px !important;
+}
+
+/* 确保弹框层在最上层 */
+.el-message-box__wrapper {
+  z-index: 3000 !important;
+}

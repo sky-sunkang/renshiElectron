@@ -1,8 +1,10 @@
 <template>
+  <el-config-provider :locale="zhCn">
   <div class="app">
+    <!-- 自定义标题栏 -->
     <div class="title-bar">
       <div class="title-bar-drag">
-        <span class="app-title">Electron + Vue3 + SQLite</span>
+        <span class="app-title">员工信息管理系统</span>
       </div>
       <div class="window-controls">
         <el-button text class="win-btn" @click="minimizeWindow">
@@ -17,91 +19,259 @@
       </div>
     </div>
 
-    <div class="content">
-      <el-page-header title="返回" content="Electron + Vue3 + SQLite" />
+    <!-- 未登录：显示登录页 -->
+    <Login v-if="!isLoggedIn" @login="handleLogin" />
 
-      <el-card class="form-card" shadow="hover">
-        <template #header>
-          <span>添加数据</span>
-        </template>
-        <el-form :model="form" inline>
-          <el-form-item label="名称">
-            <el-input v-model="form.name" placeholder="请输入名称" clearable />
-          </el-form-item>
-          <el-form-item label="值">
-            <el-input v-model="form.value" placeholder="请输入值" clearable />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="addItem">添加</el-button>
-          </el-form-item>
-        </el-form>
-      </el-card>
+    <!-- 已登录：显示主布局 -->
+    <div v-else class="main-layout">
+      <!-- 左侧侧边栏 -->
+      <div class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo">
+            <el-icon :size="28" color="#3b82f6"><UserFilled /></el-icon>
+          </div>
+          <div class="sidebar-title">员工信息管理系统</div>
+        </div>
 
-      <el-card shadow="hover">
-        <template #header>
-          <span>数据列表</span>
-          <el-tag type="info" style="margin-left: 8px">{{ items.length }} 条</el-tag>
-        </template>
-        <el-table :data="items" stripe border style="width: 100%" v-loading="loading">
-          <el-table-column prop="id" label="ID" width="60" />
-          <el-table-column prop="name" label="名称" />
-          <el-table-column prop="value" label="值" />
-          <el-table-column label="创建时间" width="180">
-            <template #default="scope">
-              {{ formatDate(scope.row.created_at) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="100">
-            <template #default="scope">
-              <el-button type="danger" size="small" @click="removeItem(scope.row.id)">删除</el-button>
-            </template>
-          </el-table-column>
-          <template #empty>
-            <el-empty description="暂无数据" />
-          </template>
-        </el-table>
-      </el-card>
+        <el-scrollbar class="sidebar-scrollbar">
+          <el-menu
+            :default-active="activeMenu"
+            class="sidebar-menu"
+            background-color="#1e293b"
+            text-color="#cbd5e1"
+            active-text-color="#3b82f6"
+            @select="handleMenuSelect"
+          >
+            <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
+              <el-icon><component :is="item.meta.icon" /></el-icon>
+              <span>{{ item.meta.title }}</span>
+            </el-menu-item>
+          </el-menu>
+        </el-scrollbar>
+      </div>
+
+      <!-- 右侧内容区 -->
+      <div class="main-content">
+        <!-- 顶部栏 -->
+        <div class="top-bar">
+          <span class="page-title">{{ pageTitle }}</span>
+          <div class="user-info">
+            <el-avatar
+              :size="32"
+              :src="currentUserAvatar"
+              class="user-avatar"
+              @click="openProfileDialog"
+            >
+              {{ currentUser?.name ? currentUser.name.charAt(0) : '?' }}
+            </el-avatar>
+            <span class="user-name">{{ currentUser?.name || '管理员' }}</span>
+            <el-divider direction="vertical" />
+            <el-button link type="primary" size="small" @click="openPwdDialog">修改密码</el-button>
+            <el-divider direction="vertical" />
+            <el-button link type="primary" size="small" @click="handleLogout">退出</el-button>
+          </div>
+        </div>
+
+        <!-- 内容区 -->
+        <!-- <el-scrollbar class="content-scrollbar"> -->
+          <div class="content-body">
+            <router-view />
+          </div>
+        <!-- </el-scrollbar> -->
+      </div>
     </div>
   </div>
+
+  <!-- 修改密码弹窗 -->
+  <el-dialog v-model="pwdDialogVisible" title="修改密码" width="400px">
+    <el-form :model="pwdForm" label-width="90px" :rules="pwdRules" ref="pwdFormRef">
+      <el-form-item label="旧密码" prop="oldPassword">
+        <el-input v-model="pwdForm.oldPassword" type="password" placeholder="请输入旧密码" show-password />
+      </el-form-item>
+      <el-form-item label="新密码" prop="newPassword">
+        <el-input v-model="pwdForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+      </el-form-item>
+      <el-form-item label="确认密码" prop="confirmPassword">
+        <el-input v-model="pwdForm.confirmPassword" type="password" placeholder="请再次输入新密码" show-password />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="pwdDialogVisible = false">取消</el-button>
+      <el-button type="primary" @click="handleChangePassword">确定</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 个人资料弹窗 -->
+  <el-dialog v-model="profileDialogVisible" title="个人资料" width="400px">
+    <div class="profile-content">
+      <div class="profile-avatar-section">
+        <el-avatar
+          :size="80"
+          :src="profileAvatar"
+          class="profile-avatar"
+        >
+          {{ currentUser?.name ? currentUser.name.charAt(0) : '?' }}
+        </el-avatar>
+        <el-upload
+          class="profile-avatar-uploader"
+          action="#"
+          :auto-upload="false"
+          :show-file-list="false"
+          :on-change="handleProfileAvatarChange"
+          accept="image/*"
+        >
+          <el-button type="primary" size="small">更换头像</el-button>
+        </el-upload>
+      </div>
+      <div class="profile-info">
+        <div class="profile-item">
+          <span class="profile-label">姓名：</span>
+          <span class="profile-value">{{ currentUser?.name || '-' }}</span>
+        </div>
+        <div class="profile-item">
+          <span class="profile-label">账号：</span>
+          <span class="profile-value">{{ currentUser?.account || '-' }}</span>
+        </div>
+        <div class="profile-item">
+          <span class="profile-label">职位：</span>
+          <span class="profile-value">{{ currentUser?.position || '-' }}</span>
+        </div>
+      </div>
+    </div>
+    <template #footer>
+      <el-button @click="profileDialogVisible = false">关闭</el-button>
+      <el-button type="primary" @click="saveProfileAvatar">保存</el-button>
+    </template>
+  </el-dialog>
+  </el-config-provider>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Minus, FullScreen, Crop, Close } from '@element-plus/icons-vue'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import { Minus, FullScreen, Crop, Close, UserFilled } from '@element-plus/icons-vue'
+import Login from './views/Login.vue'
+import { useAuthStore } from './stores/auth.js'
+import routerConfig from './router/index.js'
 
-const form = reactive({ name: '', value: '' })
-const items = ref([])
-const loading = ref(false)
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
+const { isLoggedIn, currentUser } = storeToRefs(authStore)
+
+// 当前用户头像
+const currentUserAvatar = ref('')
+
+// 加载当前用户头像
+async function loadCurrentUserAvatar() {
+  if (currentUser.value?.id) {
+    const avatar = await window.electronAPI.emp.getAvatar(currentUser.value.id)
+    currentUserAvatar.value = avatar || ''
+  }
+}
+
+// 监听用户信息变化，自动加载头像
+watch(currentUser, () => {
+  loadCurrentUserAvatar()
+}, { immediate: true })
+
+// 从路由配置中读取菜单项（排除重定向路由）
+const menuItems = computed(() => {
+  return routerConfig.options.routes.filter(r => r.meta && r.meta.title)
+})
+
+const activeMenu = computed(() => route.path)
+const pageTitle = computed(() => {
+  const currentRoute = menuItems.value.find(r => r.path === route.path)
+  return currentRoute?.meta?.title || ''
+})
+
 const isMaximized = ref(false)
 
-async function loadItems() {
-  loading.value = true
-  items.value = await window.electronAPI.db.getAllItems()
-  loading.value = false
+function handleLogin(user) {
+  authStore.login(user)
+  router.push('/employee')
 }
 
-async function addItem() {
-  if (!form.name.trim()) {
-    ElMessage.warning('名称不能为空')
+function handleLogout() {
+  authStore.logout()
+}
+
+const pwdDialogVisible = ref(false)
+const pwdFormRef = ref()
+const pwdForm = reactive({ oldPassword: '', newPassword: '', confirmPassword: '' })
+const pwdRules = {
+  oldPassword: [{ required: true, message: '请输入旧密码', trigger: 'blur' }],
+  newPassword: [{ required: true, message: '请输入新密码', trigger: 'blur' }],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    {
+      validator: (_, value, callback) => {
+        if (value !== pwdForm.newPassword) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+// 个人资料弹窗
+const profileDialogVisible = ref(false)
+const profileAvatar = ref('')
+
+function openProfileDialog() {
+  profileAvatar.value = currentUserAvatar.value
+  profileDialogVisible.value = true
+}
+
+function handleProfileAvatarChange(uploadFile) {
+  const file = uploadFile.raw
+  if (!file) return
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    profileAvatar.value = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+async function saveProfileAvatar() {
+  if (profileAvatar.value && profileAvatar.value !== currentUserAvatar.value) {
+    await window.electronAPI.emp.updateAvatar(currentUser.value.id, profileAvatar.value)
+    currentUserAvatar.value = profileAvatar.value
+    ElMessage.success('头像更新成功')
+  }
+  profileDialogVisible.value = false
+}
+
+function openPwdDialog() {
+  pwdForm.oldPassword = ''
+  pwdForm.newPassword = ''
+  pwdForm.confirmPassword = ''
+  pwdDialogVisible.value = true
+}
+
+async function handleChangePassword() {
+  try {
+    await pwdFormRef.value.validate()
+  } catch (e) {
     return
   }
-  await window.electronAPI.db.addItem(form.name, form.value)
-  form.name = ''
-  form.value = ''
-  ElMessage.success('添加成功')
-  await loadItems()
-}
-
-async function removeItem(id) {
-  await window.electronAPI.db.deleteItem(id)
-  ElMessage.success('删除成功')
-  await loadItems()
-}
-
-function formatDate(ts) {
-  if (!ts) return '-'
-  return new Date(ts * 1000).toLocaleString()
+  // 验证旧密码
+  const user = await window.electronAPI.auth.login(currentUser.value.account, pwdForm.oldPassword)
+  if (!user) {
+    ElMessage.error('旧密码错误')
+    return
+  }
+  await window.electronAPI.emp.updatePassword(currentUser.value.id, pwdForm.newPassword)
+  ElMessage.success('密码修改成功，请重新登录')
+  pwdDialogVisible.value = false
+  handleLogout()
 }
 
 async function minimizeWindow() {
@@ -117,8 +287,12 @@ async function closeWindow() {
   await window.electronAPI.window.close()
 }
 
+function handleMenuSelect(index) {
+  router.push(index)
+}
+
 onMounted(async () => {
-  await loadItems()
+  authStore.checkLogin()
   isMaximized.value = await window.electronAPI.window.isMaximized()
 })
 </script>
@@ -128,12 +302,15 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 }
+
+/* 自定义标题栏 */
 .title-bar {
   display: flex;
   align-items: center;
-  height: 40px;
-  background: #2c2c2c;
+  height: 36px;
+  background: #0f172a;
   color: #fff;
   flex-shrink: 0;
 }
@@ -146,20 +323,22 @@ onMounted(async () => {
   height: 100%;
 }
 .app-title {
-  font-size: 14px;
+  font-size: 13px;
   user-select: none;
+  color: #94a3b8;
 }
 .window-controls {
   display: flex;
   -webkit-app-region: no-drag;
 }
 .win-btn {
-  color: #fff;
-  font-size: 16px;
-  width: 48px;
-  height: 40px;
+  color: #94a3b8;
+  font-size: 14px;
+  width: 40px;
+  height: 36px;
   border-radius: 0;
   margin: 0;
+  padding: 0;
 }
 .win-btn:hover {
   background: rgba(255, 255, 255, 0.1);
@@ -167,15 +346,129 @@ onMounted(async () => {
 .close-btn:hover {
   background: #e81123;
 }
-.content {
+
+/* 主布局 */
+.main-layout {
+  display: flex;
   flex: 1;
-  overflow: auto;
-  padding: 1rem;
-  max-width: 960px;
-  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* 左侧侧边栏 */
+.sidebar {
+  width: 220px;
+  background: #1e293b;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-header {
+  padding: 20px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #334155;
+}
+.sidebar-title {
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 500;
+}
+.sidebar-scrollbar {
+  flex: 1;
+}
+.sidebar-menu {
+  border-right: none;
+}
+.sidebar-menu :deep(.el-menu-item:hover),
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: #334155 !important;
+}
+
+/* 右侧内容区 */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #f1f5f9;
+  overflow: hidden;
+}
+
+/* 顶部栏 */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 48px;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+}
+.page-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #1e293b;
+}
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-size: 14px;
+}
+.user-name {
+  font-weight: 500;
+}
+
+/* 用户头像 */
+.user-avatar {
+  cursor: pointer;
+  border: 2px solid #e2e8f0;
+  transition: border-color 0.2s;
+}
+.user-avatar:hover {
+  border-color: #3b82f6;
+}
+
+/* 个人资料弹窗 */
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+.profile-avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.profile-avatar {
+  border: 3px solid #e2e8f0;
+}
+.profile-info {
   width: 100%;
 }
-.form-card {
-  margin: 1.5rem 0;
+.profile-item {
+  display: flex;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+.profile-label {
+  color: #64748b;
+  width: 60px;
+  flex-shrink: 0;
+}
+.profile-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+/* 内容区 */
+.content-body {
+  flex: 1;
+  padding: 16px 20px;
+  overflow: auto;
 }
 </style>

@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <!-- 背景 -->
+  <rect width="256" height="256" rx="32" fill="#3b82f6"/>
+
+  <!-- 外圈 -->
+  <circle cx="128" cy="128" r="100" fill="none" stroke="white" stroke-width="8" opacity="0.3"/>
+
+  <!-- 人物图标 - 头部 -->
+  <circle cx="128" cy="100" r="35" fill="white"/>
+
+  <!-- 人物图标 - 身体 -->
+  <path d="M 70 200 Q 70 150 128 150 Q 186 150 186 200 L 186 220 L 70 220 Z" fill="white"/>
+
+  <!-- 信息线条 -->
+  <rect x="160" y="70" width="50" height="8" rx="4" fill="white" opacity="0.8"/>
+  <rect x="160" y="90" width="35" height="8" rx="4" fill="white" opacity="0.6"/>
+  <rect x="160" y="110" width="45" height="8" rx="4" fill="white" opacity="0.4"/>
+</svg>
