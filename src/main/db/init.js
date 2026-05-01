@@ -608,7 +608,7 @@ function initPermissionTables() {
 function initPermissionSeedData() {
   const db = getDb()
 
-  // 初始化系统角色
+  // 初始化系统角色（排除已删除的）
   const roles = [
     { code: 'sysadmin', name: '超级管理员', description: '系统超级管理员，拥有所有权限', is_system: 1 },
     { code: 'admin', name: '管理员', description: '系统管理员，拥有大部分管理权限', is_system: 1 },
@@ -616,11 +616,29 @@ function initPermissionSeedData() {
     { code: 'user', name: '普通用户', description: '普通员工，只能查看', is_system: 1 }
   ]
 
-  const roleStmt = db.prepare(`
-    INSERT OR IGNORE INTO roles (code, name, description, is_system) VALUES (?, ?, ?, ?)
-  `)
-  roles.forEach(role => roleStmt.run([role.code, role.name, role.description, role.is_system]))
-  roleStmt.free()
+  roles.forEach(role => {
+    // 检查角色是否存在（包括已删除的）
+    const checkStmt = db.prepare('SELECT id, is_deleted FROM roles WHERE code = ?')
+    checkStmt.bind([role.code])
+    const hasRow = checkStmt.step()
+    const existing = hasRow ? checkStmt.getAsObject() : null
+    checkStmt.free()
+
+    if (!existing) {
+      // 不存在，新增
+      const stmt = db.prepare('INSERT INTO roles (code, name, description, is_system, is_deleted) VALUES (?, ?, ?, ?, 0)')
+      stmt.run([role.code, role.name, role.description, role.is_system])
+      stmt.free()
+      console.log(`[DB] role ${role.code} seeded`)
+    } else if (existing.is_deleted === 1) {
+      // 已存在但被删除，恢复它
+      const stmt = db.prepare('UPDATE roles SET is_deleted = 0, name = ?, description = ? WHERE id = ?')
+      stmt.run([role.name, role.description, existing.id])
+      stmt.free()
+      console.log(`[DB] role ${role.code} restored`)
+    }
+    // 已存在且未删除，无需操作
+  })
 
   // 初始化系统权限
   const permissions = [
@@ -630,6 +648,7 @@ function initPermissionSeedData() {
     { code: 'menu:dictionary', name: '字典管理菜单', type: 'menu', description: '访问字典管理页面' },
     { code: 'menu:statistics', name: '数据统计菜单', type: 'menu', description: '访问数据统计页面' },
     { code: 'menu:role', name: '角色管理菜单', type: 'menu', description: '访问角色管理页面' },
+    { code: 'menu:log', name: '操作日志菜单', type: 'menu', description: '访问操作日志页面' },
     // 员工管理按钮权限
     { code: 'emp:add', name: '新增员工', type: 'button', description: '新增员工按钮' },
     { code: 'emp:edit', name: '编辑员工', type: 'button', description: '编辑员工按钮' },
@@ -678,7 +697,7 @@ function assignPermissionsToRoles() {
 
   // 获取角色ID
   const getRoleId = (code) => {
-    const stmt = db.prepare('SELECT id FROM roles WHERE code = ?')
+    const stmt = db.prepare('SELECT id FROM roles WHERE code = ? AND is_deleted = 0')
     stmt.bind([code])
     let id = null
     if (stmt.step()) id = stmt.getAsObject().id
@@ -693,8 +712,8 @@ function assignPermissionsToRoles() {
 
   if (!sysadminId || !adminId || !hrId || !userId) return
 
-  // 检查是否已有权限分配
-  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM role_permissions')
+  // 检查是否已有权限分配（排除已删除的）
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM role_permissions WHERE is_deleted = 0')
   checkStmt.step()
   const count = Number(checkStmt.getAsObject().c)
   checkStmt.free()
@@ -751,30 +770,30 @@ function initSuperAdminRole() {
   const db = getDb()
 
   // 获取超级管理员角色ID
-  const roleStmt = db.prepare("SELECT id FROM roles WHERE code = 'sysadmin'")
-  roleStmt.step()
-  const roleObj = roleStmt.getAsObject()
+  const roleStmt = db.prepare("SELECT id FROM roles WHERE code = 'sysadmin' AND is_deleted = 0")
+  const roleHasRow = roleStmt.step()
+  const roleObj = roleHasRow ? roleStmt.getAsObject() : null
   const sysadminRoleId = roleObj?.id
   roleStmt.free()
 
   // 获取超级管理员用户ID
-  const userStmt = db.prepare("SELECT id FROM employees WHERE account = 'sysadmin'")
-  userStmt.step()
-  const userObj = userStmt.getAsObject()
+  const userStmt = db.prepare("SELECT id FROM employees WHERE account = 'sysadmin' AND is_deleted = 0")
+  const userHasRow = userStmt.step()
+  const userObj = userHasRow ? userStmt.getAsObject() : null
   const userId = userObj?.id
   userStmt.free()
 
   if (userId && sysadminRoleId) {
-    // 检查是否已分配角色
-    const checkStmt = db.prepare('SELECT COUNT(*) as c FROM user_roles WHERE user_id = ? AND role_id = ?')
+    // 检查是否已分配角色（包括已删除的）
+    const checkStmt = db.prepare('SELECT id, is_deleted FROM user_roles WHERE user_id = ? AND role_id = ?')
     checkStmt.bind([userId, sysadminRoleId])
-    checkStmt.step()
-    const count = Number(checkStmt.getAsObject().c)
+    const checkHasRow = checkStmt.step()
+    const existing = checkHasRow ? checkStmt.getAsObject() : null
     checkStmt.free()
 
-    if (count === 0) {
-      // 分配超级管理员角色
-      const assignStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)')
+    if (!existing) {
+      // 不存在，新增
+      const assignStmt = db.prepare('INSERT INTO user_roles (user_id, role_id, is_deleted) VALUES (?, ?, 0)')
       assignStmt.run([userId, sysadminRoleId])
       assignStmt.free()
 
@@ -784,7 +803,20 @@ function initSuperAdminRole() {
       updateStmt.free()
 
       console.log('[DB] sysadmin role assigned')
+    } else if (existing.is_deleted === 1) {
+      // 已存在但被删除，恢复它
+      const restoreStmt = db.prepare('UPDATE user_roles SET is_deleted = 0 WHERE id = ?')
+      restoreStmt.run([existing.id])
+      restoreStmt.free()
+
+      // 更新用户角色代码
+      const updateStmt = db.prepare("UPDATE employees SET role_code = 'sysadmin' WHERE id = ?")
+      updateStmt.run([userId])
+      updateStmt.free()
+
+      console.log('[DB] sysadmin role restored')
     }
+    // 已存在且未删除，无需操作
   }
 }
 
@@ -805,39 +837,75 @@ function initDefaultUsersForRoles() {
 
   roleUserMapping.forEach(mapping => {
     // 获取用户ID
-    const userStmt = db.prepare('SELECT id FROM employees WHERE account = ?')
+    const userStmt = db.prepare('SELECT id FROM employees WHERE account = ? AND is_deleted = 0')
     userStmt.bind([mapping.account])
-    userStmt.step()
-    const userObj = userStmt.getAsObject()
+    const userHasRow = userStmt.step()
+    const userObj = userHasRow ? userStmt.getAsObject() : null
     const userId = userObj?.id
     userStmt.free()
 
     // 获取角色ID
-    const roleStmt = db.prepare('SELECT id FROM roles WHERE code = ?')
+    const roleStmt = db.prepare('SELECT id FROM roles WHERE code = ? AND is_deleted = 0')
     roleStmt.bind([mapping.roleCode])
-    roleStmt.step()
-    const roleObj = roleStmt.getAsObject()
+    const roleHasRow = roleStmt.step()
+    const roleObj = roleHasRow ? roleStmt.getAsObject() : null
     const roleId = roleObj?.id
     roleStmt.free()
 
     if (userId && roleId) {
-      // 检查该用户是否已有此角色
-      const checkStmt = db.prepare('SELECT COUNT(*) as c FROM user_roles WHERE user_id = ? AND role_id = ?')
+      // 检查该用户是否已有此角色（包括已删除的）
+      const checkStmt = db.prepare('SELECT id, is_deleted FROM user_roles WHERE user_id = ? AND role_id = ?')
       checkStmt.bind([userId, roleId])
-      checkStmt.step()
-      const count = Number(checkStmt.getAsObject().c)
+      const checkHasRow = checkStmt.step()
+      const existing = checkHasRow ? checkStmt.getAsObject() : null
       checkStmt.free()
 
-      if (count === 0) {
-        // 分配角色（不删除其他已有角色）
-        const assignStmt = db.prepare('INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)')
+      if (!existing) {
+        // 不存在，新增
+        const assignStmt = db.prepare('INSERT INTO user_roles (user_id, role_id, is_deleted) VALUES (?, ?, 0)')
         assignStmt.run([userId, roleId])
         assignStmt.free()
-
         console.log(`[DB] ${mapping.account} assigned role ${mapping.roleCode}`)
+      } else if (existing.is_deleted === 1) {
+        // 已存在但被删除，恢复它
+        const restoreStmt = db.prepare('UPDATE user_roles SET is_deleted = 0 WHERE id = ?')
+        restoreStmt.run([existing.id])
+        restoreStmt.free()
+        console.log(`[DB] ${mapping.account} role ${mapping.roleCode} restored`)
       }
+      // 已存在且未删除，无需操作
+    } else {
+      console.log(`[DB] WARNING: user ${mapping.account} or role ${mapping.roleCode} not found`)
     }
   })
+}
+
+// ==================== 操作日志初始化 ====================
+
+/**
+ * 初始化操作日志表结构
+ */
+function initOperationLogTables() {
+  const db = getDb()
+
+  // 创建操作日志表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS operation_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      user_name TEXT NOT NULL,
+      module TEXT NOT NULL,
+      action TEXT NOT NULL,
+      target_type TEXT,
+      target_id INTEGER,
+      target_name TEXT,
+      detail TEXT,
+      ip TEXT,
+      created_at INTEGER DEFAULT (unixepoch())
+    )
+  `)
+
+  console.log('[DB] operation_logs table initialized')
 }
 
 // ==================== 统一初始化入口 ====================
@@ -850,6 +918,7 @@ function initAllTables() {
   initEmployeeTables()
   initDictTables()
   initPermissionTables()
+  initOperationLogTables()
 }
 
 /**

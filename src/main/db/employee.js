@@ -5,6 +5,7 @@
 
 const { getDb, save } = require('./core')
 const { getUserPermissions, getUserRoles, isSuperAdmin } = require('./permission')
+const { addLog } = require('./log')
 
 /**
  * 员工登录验证
@@ -24,6 +25,16 @@ function login(account, password) {
     user.permissions = getUserPermissions(user.id)
     user.roles = getUserRoles(user.id)
     user.isSuperAdmin = isSuperAdmin(user.id)
+    // 记录登录日志
+    addLog({
+      userId: user.id,
+      userName: user.name,
+      module: '系统',
+      action: '登录',
+      targetType: '用户',
+      targetId: user.id,
+      targetName: user.name
+    })
   }
   stmt.free()
   console.log('[DB] login result:', user)
@@ -33,21 +44,32 @@ function login(account, password) {
 /**
  * 新增员工
  * @param {Object} data - 员工数据
- * @param {number} createdBy - 创建人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {number} 新增员工的ID
  */
-function addEmployee(data, createdBy) {
+function addEmployee(data, operator) {
   const db = getDb()
   const stmt = db.prepare(
     'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password, created_by, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
   )
-  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password || '123456', createdBy || null])
+  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password || '123456', operator?.id || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
   const result = idStmt.getAsObject()
   idStmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '员工管理',
+    action: '新增',
+    targetType: '员工',
+    targetId: result.id,
+    targetName: data.name,
+    detail: JSON.stringify({ account: data.account, position: data.position })
+  })
   return result.id
 }
 
@@ -94,17 +116,28 @@ function getEmployeeById(id) {
  * 更新员工信息
  * @param {number} id - 员工ID
  * @param {Object} data - 员工数据
- * @param {number} updatedBy - 修改人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
  */
-function updateEmployee(id, data, updatedBy) {
+function updateEmployee(id, data, operator) {
   const db = getDb()
   const stmt = db.prepare(
     'UPDATE employees SET name = ?, account = ?, gender = ?, age = ?, phone = ?, email = ?, department_id = ?, position = ?, salary = ?, password = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?'
   )
-  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password, updatedBy || null, id])
+  stmt.run([data.name, data.account, data.gender, data.age, data.phone, data.email, data.department_id, data.position, data.salary, data.password, operator?.id || null, id])
   stmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '员工管理',
+    action: '编辑',
+    targetType: '员工',
+    targetId: id,
+    targetName: data.name,
+    detail: JSON.stringify({ account: data.account, position: data.position })
+  })
   return true
 }
 
@@ -112,30 +145,65 @@ function updateEmployee(id, data, updatedBy) {
  * 更新员工密码
  * @param {number} id - 员工ID
  * @param {string} password - 新密码
- * @param {number} updatedBy - 修改人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
  */
-function updatePassword(id, password, updatedBy) {
+function updatePassword(id, password, operator) {
   const db = getDb()
+  // 获取员工名称
+  const nameStmt = db.prepare('SELECT name FROM employees WHERE id = ?')
+  nameStmt.bind([id])
+  nameStmt.step()
+  const empName = nameStmt.getAsObject()?.name
+  nameStmt.free()
+
   const stmt = db.prepare('UPDATE employees SET password = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([password, updatedBy || null, id])
+  stmt.run([password, operator?.id || null, id])
   stmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '员工管理',
+    action: '修改密码',
+    targetType: '员工',
+    targetId: id,
+    targetName: empName
+  })
   return true
 }
 
 /**
  * 删除员工（逻辑删除）
  * @param {number} id - 员工ID
- * @param {number} deletedBy - 删除人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 删除成功返回true
  */
-function deleteEmployee(id, deletedBy) {
+function deleteEmployee(id, operator) {
   const db = getDb()
+  // 获取员工信息
+  const infoStmt = db.prepare('SELECT name, account FROM employees WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const empInfo = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE employees SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([deletedBy || null, id])
+  stmt.run([operator?.id || null, id])
   stmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '员工管理',
+    action: '删除',
+    targetType: '员工',
+    targetId: id,
+    targetName: empInfo?.name,
+    detail: JSON.stringify({ account: empInfo?.account })
+  })
   return true
 }
 

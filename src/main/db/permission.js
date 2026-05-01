@@ -4,6 +4,7 @@
  */
 
 const { getDb, save } = require('./core')
+const { addLog } = require('./log')
 
 /**
  * 获取用户的权限列表（排除已删除的）
@@ -144,19 +145,30 @@ function getRoleById(id) {
 /**
  * 新增角色
  * @param {Object} data - 角色数据
- * @param {number} createdBy - 创建人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {number} 新增角色的ID
  */
-function addRole(data, createdBy) {
+function addRole(data, operator) {
   const db = getDb()
   const stmt = db.prepare('INSERT INTO roles (code, name, description, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
-  stmt.run([data.code, data.name, data.description, createdBy || null])
+  stmt.run([data.code, data.name, data.description, operator?.id || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
   const result = idStmt.getAsObject()
   idStmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '新增',
+    targetType: '角色',
+    targetId: result.id,
+    targetName: data.name,
+    detail: JSON.stringify({ code: data.code, description: data.description })
+  })
   return result.id
 }
 
@@ -164,35 +176,46 @@ function addRole(data, createdBy) {
  * 更新角色
  * @param {number} id - 角色ID
  * @param {Object} data - 角色数据
- * @param {number} updatedBy - 修改人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
  */
-function updateRole(id, data, updatedBy) {
+function updateRole(id, data, operator) {
   const db = getDb()
   const stmt = db.prepare('UPDATE roles SET name = ?, description = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([data.name, data.description, updatedBy || null, id])
+  stmt.run([data.name, data.description, operator?.id || null, id])
   stmt.free()
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '编辑',
+    targetType: '角色',
+    targetId: id,
+    targetName: data.name,
+    detail: JSON.stringify({ description: data.description })
+  })
   return true
 }
 
 /**
  * 删除角色（逻辑删除）
  * @param {number} id - 角色ID
- * @param {number} deletedBy - 删除人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 删除成功返回true
  */
-function deleteRole(id, deletedBy) {
+function deleteRole(id, operator) {
   const db = getDb()
 
   // 检查是否为系统角色
-  const checkStmt = db.prepare('SELECT is_system FROM roles WHERE id = ?')
+  const checkStmt = db.prepare('SELECT is_system, name FROM roles WHERE id = ?')
   checkStmt.bind([id])
   checkStmt.step()
-  const isSystem = Boolean(checkStmt.getAsObject()?.is_system)
+  const roleInfo = checkStmt.getAsObject()
   checkStmt.free()
 
-  if (isSystem) {
+  if (roleInfo?.is_system) {
     throw new Error('系统角色不能删除')
   }
 
@@ -208,10 +231,20 @@ function deleteRole(id, deletedBy) {
 
   // 逻辑删除角色
   const stmt = db.prepare('UPDATE roles SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([deletedBy || null, id])
+  stmt.run([operator?.id || null, id])
   stmt.free()
 
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '删除',
+    targetType: '角色',
+    targetId: id,
+    targetName: roleInfo?.name
+  })
   return true
 }
 
@@ -236,11 +269,18 @@ function getRolePermissions(roleId) {
  * 设置角色的权限
  * @param {number} roleId - 角色ID
  * @param {Array} permissionCodes - 权限代码列表
- * @param {number} createdBy - 创建人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 设置成功返回true
  */
-function setRolePermissions(roleId, permissionCodes, createdBy) {
+function setRolePermissions(roleId, permissionCodes, operator) {
   const db = getDb()
+
+  // 获取角色名称
+  const roleStmt = db.prepare('SELECT name FROM roles WHERE id = ?')
+  roleStmt.bind([roleId])
+  roleStmt.step()
+  const roleName = roleStmt.getAsObject()?.name
+  roleStmt.free()
 
   // 逻辑删除原有权限
   const delStmt = db.prepare('UPDATE role_permissions SET is_deleted = 1 WHERE role_id = ?')
@@ -249,10 +289,21 @@ function setRolePermissions(roleId, permissionCodes, createdBy) {
 
   // 添加新权限
   const stmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code, created_by, is_deleted) VALUES (?, ?, ?, 0)')
-  permissionCodes.forEach(code => stmt.run([roleId, code, createdBy || null]))
+  permissionCodes.forEach(code => stmt.run([roleId, code, operator?.id || null]))
   stmt.free()
 
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '设置权限',
+    targetType: '角色',
+    targetId: roleId,
+    targetName: roleName,
+    detail: JSON.stringify({ permissions: permissionCodes })
+  })
   return true
 }
 
@@ -300,11 +351,22 @@ function setUserRoles(userId, roleIds) {
  * 为用户添加单个角色
  * @param {number} userId - 用户ID
  * @param {number} roleId - 角色ID
- * @param {number} createdBy - 创建人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 添加成功返回true
  */
-function addUserRole(userId, roleId, createdBy) {
+function addUserRole(userId, roleId, operator) {
   const db = getDb()
+
+  // 获取用户和角色信息
+  const infoStmt = db.prepare(`
+    SELECT e.name as userName, r.name as roleName
+    FROM employees e, roles r
+    WHERE e.id = ? AND r.id = ?
+  `)
+  infoStmt.bind([userId, roleId])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
 
   // 检查是否已有该角色（包括已删除的）
   const checkStmt = db.prepare('SELECT id, is_deleted FROM user_roles WHERE user_id = ? AND role_id = ?')
@@ -320,18 +382,29 @@ function addUserRole(userId, roleId, createdBy) {
     } else {
       // 已存在但已删除，恢复它
       const stmt = db.prepare('UPDATE user_roles SET is_deleted = 0, created_by = ? WHERE id = ?')
-      stmt.run([createdBy || null, existing.id])
+      stmt.run([operator?.id || null, existing.id])
       stmt.free()
       save()
     }
   } else {
     // 不存在，新增
     const stmt = db.prepare('INSERT INTO user_roles (user_id, role_id, created_by, is_deleted) VALUES (?, ?, ?, 0)')
-    stmt.run([userId, roleId, createdBy || null])
+    stmt.run([userId, roleId, operator?.id || null])
     stmt.free()
     save()
   }
 
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '分配用户',
+    targetType: '角色',
+    targetId: roleId,
+    targetName: info?.roleName,
+    detail: JSON.stringify({ userId, userName: info?.userName })
+  })
   return true
 }
 
@@ -339,16 +412,39 @@ function addUserRole(userId, roleId, createdBy) {
  * 移除用户的单个角色（逻辑删除）
  * @param {number} userId - 用户ID
  * @param {number} roleId - 角色ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 移除成功返回true
  */
-function removeUserRole(userId, roleId) {
+function removeUserRole(userId, roleId, operator) {
   const db = getDb()
+
+  // 获取用户和角色信息
+  const infoStmt = db.prepare(`
+    SELECT e.name as userName, r.name as roleName
+    FROM employees e, roles r
+    WHERE e.id = ? AND r.id = ?
+  `)
+  infoStmt.bind([userId, roleId])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
 
   const stmt = db.prepare('UPDATE user_roles SET is_deleted = 1 WHERE user_id = ? AND role_id = ?')
   stmt.run([userId, roleId])
   stmt.free()
 
   save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '角色管理',
+    action: '移除用户',
+    targetType: '角色',
+    targetId: roleId,
+    targetName: info?.roleName,
+    detail: JSON.stringify({ userId, userName: info?.userName })
+  })
   return true
 }
 

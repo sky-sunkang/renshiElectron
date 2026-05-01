@@ -33,6 +33,7 @@
 │   │       ├── employee.js      # 员工模块：员工增删改查、登录认证
 │   │       ├── dict.js          # 字典模块：字典类型和字典项管理
 │   │       ├── permission.js    # 权限模块：RBAC 权限管理
+│   │       ├── log.js           # 操作日志模块：日志记录、查询、清理
 │   │       └── statistics.js    # 统计模块：各类统计数据查询
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
@@ -53,9 +54,13 @@
 │   │   │   ├── EmployeeManage.vue   # 员工管理（左侧部门树 + 右侧列表 + Pinia）
 │   │   │   ├── DepartmentManage.vue # 部门管理（左侧部门树 + 右侧子部门列表 + Pinia）
 │   │   │   ├── DictionaryManage.vue # 字典管理（左侧类型列表 + 右侧字典项列表）
+│   │   │   ├── RoleUserManage.vue   # 角色人员管理（左侧角色列表 + 右侧已分配人员）
+│   │   │   ├── RolePermissionManage.vue # 角色权限配置（左侧角色列表 + 右侧权限勾选）
+│   │   │   ├── OperationLog.vue     # 操作日志查看
 │   │   │   └── StatisticsPage.vue   # 数据统计（卡片 + 折线图 + 饼状图）
 │   │   └── components/          # 公共组件
-│   │       └── HelloWorld.vue
+│   │       ├── Auth.vue             # 权限控制组件
+│   │       └── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
 ├── vite.main.config.js          # 主进程构建配置（CJS）
 ├── vite.preload.config.js       # 预加载脚本构建配置（CJS）
 ├── vite.renderer.config.mjs     # 渲染进程构建配置（Vue + 按需引入）
@@ -95,21 +100,23 @@ npm run electron:build    # 构建并打包 Electron 应用
 **模块结构：**
 - `core.js` — 数据库连接管理、持久化
 - `init.js` — 初始化脚本（表结构创建、种子数据、角色权限初始化）
-- `department.js` — 部门 CRUD、路径计算
-- `employee.js` — 员工 CRUD、登录认证
-- `dict.js` — 字典类型和字典项管理
-- `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）
+- `department.js` — 部门 CRUD、路径计算、操作日志记录
+- `employee.js` — 员工 CRUD、登录认证、操作日志记录
+- `dict.js` — 字典类型和字典项管理、操作日志记录
+- `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）、操作日志记录
+- `log.js` — 操作日志记录、查询、清理
 - `statistics.js` — 统计数据查询
 
 **表结构：**
-- `departments`：id, name, description, parent_id, path_ids, path_names, created_at
-- `employees`：id, name, account, password, gender, age, phone, email, department_id, position, salary, avatar, role_code, created_at
-- `dict_types`：id, code, name, description, created_at
-- `dict_items`：id, type_code, label, value, sort, created_at
-- `roles`：id, code, name, description, is_system, created_at
-- `permissions`：id, code, name, type, description, created_at
-- `role_permissions`：id, role_id, permission_code, created_at
-- `user_roles`：id, user_id, role_id, created_at
+- `departments`：id, name, description, parent_id, path_ids, path_names, is_deleted, created_by, created_at, updated_by, updated_at
+- `employees`：id, name, account, password, gender, age, phone, email, department_id, position, salary, avatar, role_code, is_deleted, created_by, created_at, updated_by, updated_at
+- `dict_types`：id, code, name, description, is_deleted, created_by, created_at, updated_by, updated_at
+- `dict_items`：id, type_code, label, value, sort, is_deleted, created_by, created_at, updated_by, updated_at
+- `roles`：id, code, name, description, is_system, is_deleted, created_by, created_at, updated_by, updated_at
+- `permissions`：id, code, name, type, description, is_deleted, created_by, created_at, updated_by, updated_at
+- `role_permissions`：id, role_id, permission_code, is_deleted, created_by, created_at
+- `user_roles`：id, user_id, role_id, is_deleted, created_by, created_at
+- `operation_logs`：id, user_id, user_name, module, action, target_type, target_id, target_name, detail, created_at
 
 **初始化数据：**
 - 21 个部门，3 层级结构
@@ -134,7 +141,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **自定义标题栏**：`frame: false`，无边框窗口，顶部可拖拽区域 + 最小化/最大化/关闭按钮
 - **左侧侧边栏**：220px，深色背景，el-menu 导航
 - **右侧主内容区**：白色顶部栏（页面标题 + 用户信息 + 修改密码/退出）+  底部内容区（如果是左右结构的布局，各自占满内容区域高度，高度超出各自滚动）
-- **字典管理**：左侧字典类型列表，右侧字典项列表，其他模块有需要下拉选项优先使用该模块来配置实现
+- **字典管理**：左侧字典类型列表，右侧字典项列表，其他模块有需要
 - **中文界面**：Element Plus 使用 `zhCn` locale，分页等组件显示中文
 
 ## 注意事项
@@ -142,13 +149,14 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **Node 版本限制**：当前环境为 Node 16.18.1，原生模块需兼容此版本
 - **模块格式**：主进程和预加载脚本使用 CommonJS (`require`)，渲染进程使用 ES Modules (`import`)
 - **contextIsolation**：预加载脚本启用 `contextIsolation: true`，通过 `contextBridge` 暴露 API
+- **下拉选项**：下拉选项优先使用字典管理模块来配置实现
 - **数据库文件**：`app.db` 已加入 `.gitignore`
-- **不用 TypeScript**：项目全部使用 JavaScript
+- **不用 TypeScript**：项目全部使用 JavaScript，每个模块的js代码尽量放到对应模块的pinia文件中
 - **代码规范**：JS 方法需写注释说明用途，方法内部关键步骤也需注释
 - **数据查询**：`emp.getAll()` 返回的员工数据包含 `department_name`（关联部门名称）；`dept.getAll()` 返回的部门数据包含 `path_ids` 和 `path_names`（自动计算的路径）
 - **滚动条**：统一使用 Element Plus 的 `el-scrollbar` 组件，保持界面风格一致
 - **公共代码组件化**：重复使用的代码尽量抽取为公共组件或工具函数，如部门树、字典下拉、表格操作栏等
-- **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化脚本一定要保证有数据的时候不要覆盖数据，启动时统一调用
-- **权限控制**：登录后用户权限存储在 `currentUser.permissions` 中，通过 `v-if="hasPermission('xxx')"` 控制按钮显示
+- **权限控制**：每次或调整模块需要相应的调整权限配置，登录后用户权限存储在 `currentUser.permissions` 中，通过 `v-if="hasPermission('xxx')"` 控制按钮显示
 - **表设计**：所有的表都要删除状态创建人和时间，修改人和时间，所有的删除都需要使用逻辑删除。
-- **操作日志记录**：所有操作需要增加操作日志如：张三  2026-01-01 00:00:00 新增用户 【那一行数据】
+- **操作日志记录**：所有操作需要增加操作日志，日志格式：`用户名 时间 操作类型 操作对象 详情`
+- **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化时检查数据是否已存在（包括已删除的记录），避免重复插入

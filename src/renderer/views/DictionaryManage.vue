@@ -87,8 +87,16 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 // 字典类型数据
 const types = ref([])
@@ -166,11 +174,12 @@ function openTypeDialog(row) {
  */
 async function saveType() {
   await typeFormRef.value.validate()
+  const operator = getOperator()
   if (typeForm.id) {
-    await window.electronAPI.dict.updateType(typeForm.id, typeForm.code, typeForm.name, typeForm.description)
+    await window.electronAPI.dict.updateType(typeForm.id, typeForm.code, typeForm.name, typeForm.description, operator)
     ElMessage.success('更新成功')
   } else {
-    await window.electronAPI.dict.addType(typeForm.code, typeForm.name, typeForm.description)
+    await window.electronAPI.dict.addType(typeForm.code, typeForm.name, typeForm.description, operator)
     ElMessage.success('添加成功')
   }
   typeDialogVisible.value = false
@@ -189,7 +198,7 @@ async function removeType(row) {
     return
   }
   await ElMessageBox.confirm(`确定删除字典类型「${row.name}」吗？`, '提示', { type: 'warning' })
-  await window.electronAPI.dict.deleteType(row.id)
+  await window.electronAPI.dict.deleteType(row.id, getOperator())
   ElMessage.success('删除成功')
   currentType.value = null
   items.value = []
@@ -218,11 +227,12 @@ function openItemDialog(row) {
  */
 async function saveItem() {
   await itemFormRef.value.validate()
+  const operator = getOperator()
   if (itemForm.id) {
-    await window.electronAPI.dict.updateItem(itemForm.id, itemForm.type_code, itemForm.label, itemForm.value, itemForm.sort)
+    await window.electronAPI.dict.updateItem(itemForm.id, itemForm.type_code, itemForm.label, itemForm.value, itemForm.sort, operator)
     ElMessage.success('更新成功')
   } else {
-    await window.electronAPI.dict.addItem(itemForm.type_code, itemForm.label, itemForm.value, itemForm.sort)
+    await window.electronAPI.dict.addItem(itemForm.type_code, itemForm.label, itemForm.value, itemForm.sort, operator)
     ElMessage.success('添加成功')
   }
   itemDialogVisible.value = false
@@ -235,7 +245,7 @@ async function saveItem() {
  */
 async function removeItem(row) {
   await ElMessageBox.confirm(`确定删除字典项「${row.label}」吗？`, '提示', { type: 'warning' })
-  await window.electronAPI.dict.deleteItem(row.id)
+  await window.electronAPI.dict.deleteItem(row.id, getOperator())
   ElMessage.success('删除成功')
   await loadItems()
 }

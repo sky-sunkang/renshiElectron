@@ -107,10 +107,18 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Document } from '@element-plus/icons-vue'
 import { useDeptStore } from '../stores/dept.js'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const deptStore = useDeptStore()
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
 const { list: deptList, treeData } = storeToRefs(deptStore)
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 const loading = ref(false)
 const employees = ref([])
@@ -215,11 +223,12 @@ function openDialog(row) {
 async function save() {
   await formRef.value.validate()
   const pid = form.parent_id === '' ? 0 : (form.parent_id || 0)
+  const operator = getOperator()
   if (form.id) {
-    await window.electronAPI.dept.update(form.id, form.name, form.description, pid)
+    await window.electronAPI.dept.update(form.id, form.name, form.description, pid, operator)
     ElMessage.success('更新成功')
   } else {
-    await window.electronAPI.dept.add(form.name, form.description, pid)
+    await window.electronAPI.dept.add(form.name, form.description, pid, operator)
     ElMessage.success('添加成功')
   }
   dialogVisible.value = false
@@ -238,7 +247,7 @@ async function remove(row) {
     return
   }
   await ElMessageBox.confirm(`确定删除部门「${row.name}」吗？`, '提示', { type: 'warning' })
-  await window.electronAPI.dept.delete(row.id)
+  await window.electronAPI.dept.delete(row.id, getOperator())
   ElMessage.success('删除成功')
   currentDept.value = null
   await load()

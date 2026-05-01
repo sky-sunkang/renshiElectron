@@ -9,6 +9,7 @@ const employee = require('./employee')
 const dict = require('./dict')
 const statistics = require('./statistics')
 const permission = require('./permission')
+const log = require('./log')
 const init = require('./init')
 
 /**
@@ -71,5 +72,11 @@ module.exports = {
   getAllPermissions: permission.getAllPermissions,
   getUserPermissions: permission.getUserPermissions,
   hasPermission: permission.hasPermission,
-  isSuperAdmin: permission.isSuperAdmin
+  isSuperAdmin: permission.isSuperAdmin,
+  // 操作日志模块
+  addLog: log.addLog,
+  getLogs: log.getLogs,
+  getLogModules: log.getModules,
+  getLogActions: log.getActions,
+  clearLogs: log.clearLogs
 }

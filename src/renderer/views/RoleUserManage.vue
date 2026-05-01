@@ -127,9 +127,17 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 import EmployeeSelector from '../components/EmployeeSelector.vue'
 
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 // 角色数据
 const roles = ref([])
@@ -214,6 +222,7 @@ async function handleEmployeeConfirm(selectedEmployees) {
   if (!currentRole.value) return
 
   const roleId = currentRole.value.id
+  const operator = getOperator()
   // 获取当前已分配的用户ID
   const currentAssignedIds = assignedUserIds.value.slice()
   // 新选中的用户ID
@@ -226,11 +235,11 @@ async function handleEmployeeConfirm(selectedEmployees) {
 
   // 移除用户的当前角色（不影响其他角色）
   for (const userId of toRemoveIds) {
-    await window.electronAPI.perm.removeUserRole(userId, roleId)
+    await window.electronAPI.perm.removeUserRole(userId, roleId, operator)
   }
   // 为用户添加当前角色（不影响其他角色）
   for (const userId of toAddIds) {
-    await window.electronAPI.perm.addUserRole(userId, roleId)
+    await window.electronAPI.perm.addUserRole(userId, roleId, operator)
   }
 
   if (toAddIds.length > 0 || toRemoveIds.length > 0) {
@@ -252,7 +261,7 @@ async function removeAssignedUser(user) {
   try {
     await ElMessageBox.confirm(`确定将「${user.name}」从该角色移除吗？`, '提示', { type: 'warning' })
     // 移除用户的当前角色（不影响其他角色）
-    await window.electronAPI.perm.removeUserRole(user.id, currentRole.value.id)
+    await window.electronAPI.perm.removeUserRole(user.id, currentRole.value.id, getOperator())
     ElMessage.success('移除成功')
     // 刷新已分配用户列表
     const roleUsers = await window.electronAPI.perm.getRoleUsers(currentRole.value.id)
@@ -274,9 +283,10 @@ async function batchRemoveUsers() {
   if (selectedUserIds.value.length === 0) return
   try {
     await ElMessageBox.confirm(`确定移除选中的 ${selectedUserIds.value.length} 位人员吗？`, '提示', { type: 'warning' })
+    const operator = getOperator()
     // 批量移除用户的当前角色（不影响其他角色）
     for (const userId of selectedUserIds.value) {
-      await window.electronAPI.perm.removeUserRole(userId, currentRole.value.id)
+      await window.electronAPI.perm.removeUserRole(userId, currentRole.value.id, operator)
     }
     ElMessage.success('移除成功')
     // 刷新已分配用户列表
@@ -313,18 +323,19 @@ function openRoleDialog(row) {
  */
 async function saveRole() {
   await roleFormRef.value.validate()
+  const operator = getOperator()
   if (roleForm.id) {
     await window.electronAPI.perm.updateRole(roleForm.id, {
       name: roleForm.name,
       description: roleForm.description
-    })
+    }, operator)
     ElMessage.success('更新成功')
   } else {
     await window.electronAPI.perm.addRole({
       code: roleForm.code,
       name: roleForm.name,
       description: roleForm.description
-    })
+    }, operator)
     ElMessage.success('添加成功')
   }
   roleDialogVisible.value = false
@@ -338,7 +349,7 @@ async function saveRole() {
 async function removeRole(row) {
   try {
     await ElMessageBox.confirm(`确定删除角色「${row.name}」吗？`, '提示', { type: 'warning' })
-    await window.electronAPI.perm.deleteRole(row.id)
+    await window.electronAPI.perm.deleteRole(row.id, getOperator())
     ElMessage.success('删除成功')
     currentRole.value = null
     assignedUserIds.value = []

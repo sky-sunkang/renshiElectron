@@ -211,17 +211,25 @@ import { useDeptStore } from '../stores/dept.js'
 import { useEmpStore } from '../stores/emp.js'
 import { useDictStore } from '../stores/dict.js'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const deptStore = useDeptStore()
 const empStore = useEmpStore()
 const dictStore = useDictStore()
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
 const { list: deptList, treeData: deptTreeData } = storeToRefs(deptStore)
 const { list: empList, loading } = storeToRefs(empStore)
 const { gender: genderDict } = storeToRefs(dictStore)
 
 /** 职位字典选项 */
 const positionOptions = computed(() => dictStore.getOptions('position'))
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 const search = reactive({ name: '', mode: 'direct' })
 const page = ref(1)
@@ -333,18 +341,19 @@ async function save() {
   delete data.department_name
   delete data.created_at
   if (!data.password) data.password = '123456'
+  const operator = getOperator()
   if (form.id) {
-    await window.electronAPI.emp.update(form.id, data)
+    await window.electronAPI.emp.update(form.id, data, operator)
     // 如果有新头像，上传头像
     if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
-      await window.electronAPI.emp.updateAvatar(form.id, avatarPreview.value)
+      await window.electronAPI.emp.updateAvatar(form.id, avatarPreview.value, operator)
     }
     ElMessage.success('更新成功')
   } else {
-    const newId = await window.electronAPI.emp.add(data)
+    const newId = await window.electronAPI.emp.add(data, operator)
     // 如果有头像，上传头像
     if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
-      await window.electronAPI.emp.updateAvatar(newId, avatarPreview.value)
+      await window.electronAPI.emp.updateAvatar(newId, avatarPreview.value, operator)
     }
     ElMessage.success('添加成功')
   }
@@ -355,7 +364,7 @@ async function save() {
 
 async function remove(id) {
   await ElMessageBox.confirm('确定删除该员工吗？', '提示', { type: 'warning' })
-  await window.electronAPI.emp.delete(id)
+  await window.electronAPI.emp.delete(id, getOperator())
   ElMessage.success('删除成功')
   await load()
 }
@@ -366,8 +375,9 @@ function handleSelectionChange(val) {
 
 async function batchDelete() {
   await ElMessageBox.confirm(`确定删除选中的 ${selected.value.length} 名员工吗？`, '提示', { type: 'warning' })
+  const operator = getOperator()
   for (const emp of selected.value) {
-    await window.electronAPI.emp.delete(emp.id)
+    await window.electronAPI.emp.delete(emp.id, operator)
   }
   ElMessage.success('批量删除成功')
   await load()

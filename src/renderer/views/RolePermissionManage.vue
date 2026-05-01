@@ -113,8 +113,16 @@
 import { ref, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 // 角色数据
 const roles = ref([])
@@ -164,7 +172,7 @@ async function savePermissions() {
   if (!currentRole.value) return
   // 将响应式数组转换为普通数组
   const permissionsToSave = JSON.parse(JSON.stringify(selectedPermissions.value))
-  await window.electronAPI.perm.setRolePermissions(currentRole.value.id, permissionsToSave)
+  await window.electronAPI.perm.setRolePermissions(currentRole.value.id, permissionsToSave, getOperator())
   ElMessage.success('权限保存成功')
 }
 
