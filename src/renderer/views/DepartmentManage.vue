@@ -39,12 +39,15 @@
 
               <div class="child-list-header">
                 <span>{{ currentDept ? currentDept.name + ' - 部门列表' : '部门列表' }}</span>
-                <el-radio-group v-model="childMode" size="small">
-                  <el-radio-button label="direct">直接子部门</el-radio-button>
-                  <el-radio-button label="all">所有子部门</el-radio-button>
-                </el-radio-group>
+                <div class="header-actions">
+                  <el-button v-if="permStore.hasPermission('dept:export')" plain size="small" @click="exportData">导出</el-button>
+                  <el-radio-group v-model="childMode" size="small">
+                    <el-radio-button label="direct">直接子部门</el-radio-button>
+                    <el-radio-button label="all">所有子部门</el-radio-button>
+                  </el-radio-group>
+                </div>
               </div>
-            <el-table :data="childDepartments" stripe border size="small" v-loading="loading">
+            <el-table :data="pagedDepartments" stripe border size="small" v-loading="loading">
               <el-table-column type="index" label="序号" width="60" align="center" />
               <el-table-column prop="name" label="部门名称" min-width="160">
                 <template #default="scope">
@@ -65,6 +68,18 @@
                 </template>
               </el-table-column>
             </el-table>
+            <div class="table-footer">
+              <span class="footer-count">共 {{ childDepartments.length }} 条</span>
+              <el-pagination
+                v-model:current-page="page"
+                v-model:page-size="pageSize"
+                :page-sizes="[10, 20, 50]"
+                layout="prev, pager, next, sizes"
+                :total="childDepartments.length"
+                background
+                small
+              />
+            </div>
             <el-empty v-if="currentDept && childDepartments.length === 0" description="暂无子部门" />
         </div>
       </el-scrollbar>
@@ -108,6 +123,7 @@ import { Search, Document } from '@element-plus/icons-vue'
 import { useDeptStore } from '../stores/dept.js'
 import { usePermissionStore } from '../stores/permission.js'
 import { useAuthStore } from '../stores/auth.js'
+import * as XLSX from 'xlsx'
 
 const deptStore = useDeptStore()
 const permStore = usePermissionStore()
@@ -127,6 +143,8 @@ const treeRef = ref()
 const currentDept = ref(null)
 
 const childMode = ref('direct')
+const page = ref(1)
+const pageSize = ref(10)
 
 const dialogVisible = ref(false)
 const formRef = ref()
@@ -164,12 +182,26 @@ const childDepartments = computed(() => {
   return result
 })
 
+/**
+ * 分页后的部门列表
+ */
+const pagedDepartments = computed(() => {
+  const start = (page.value - 1) * pageSize.value
+  return childDepartments.value.slice(start, start + pageSize.value)
+})
+
 function handleNodeClick(data) {
   currentDept.value = data
+  page.value = 1 // 切换部门时重置页码
 }
 
 watch(treeFilter, (val) => {
   treeRef.value?.filter(val)
+})
+
+// 切换模式时重置页码
+watch(childMode, () => {
+  page.value = 1
 })
 
 function filterNode(value, data) {
@@ -253,6 +285,47 @@ async function remove(row) {
   await load()
 }
 
+/**
+ * 导出部门数据为Excel
+ */
+function exportData() {
+  // 准备Excel数据
+  const data = childDepartments.value.map(d => ({
+    '部门名称': d.name || '',
+    '部门路径': d.path_names || '',
+    '描述': d.description || '',
+    '员工数量': getDeptEmployeeCount(d.id)
+  }))
+
+  // 创建工作簿和工作表
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.json_to_sheet(data)
+
+  // 设置列宽
+  ws['!cols'] = [
+    { wch: 20 },  // 部门名称
+    { wch: 30 },  // 部门路径
+    { wch: 25 },  // 描述
+    { wch: 10 }   // 员工数量
+  ]
+
+  XLSX.utils.book_append_sheet(wb, ws, '部门信息')
+
+  // 导出文件
+  const fileName = currentDept.value ? `${currentDept.value.name}_部门信息.xlsx` : '部门信息.xlsx'
+  XLSX.writeFile(wb, fileName)
+  ElMessage.success('导出成功')
+}
+
+/**
+ * 获取部门员工数量
+ * @param {number} deptId - 部门ID
+ * @returns {number} 员工数量
+ */
+function getDeptEmployeeCount(deptId) {
+  return employees.value.filter(e => Number(e.department_id) === Number(deptId)).length
+}
+
 onMounted(load)
 </script>
 
@@ -324,5 +397,21 @@ onMounted(load)
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+.footer-count {
+  color: #64748b;
+  font-size: 13px;
 }
 </style>

@@ -660,6 +660,7 @@ function initPermissionSeedData() {
     { code: 'dept:add', name: '新增部门', type: 'button', description: '新增部门按钮' },
     { code: 'dept:edit', name: '编辑部门', type: 'button', description: '编辑部门按钮' },
     { code: 'dept:delete', name: '删除部门', type: 'button', description: '删除部门按钮' },
+    { code: 'dept:export', name: '导出部门', type: 'button', description: '导出部门数据按钮' },
     // 字典管理按钮权限
     { code: 'dict:add', name: '新增字典', type: 'button', description: '新增字典类型按钮' },
     { code: 'dict:edit', name: '编辑字典', type: 'button', description: '编辑字典类型按钮' },
@@ -747,7 +748,7 @@ function assignPermissionsToRoles() {
   const adminPermissions = [
     'menu:employee', 'menu:department', 'menu:dictionary', 'menu:statistics',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export',
-    'dept:add', 'dept:edit', 'dept:delete',
+    'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
     'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete'
   ]
   const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')

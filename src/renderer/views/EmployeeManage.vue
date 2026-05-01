@@ -212,6 +212,7 @@ import { useEmpStore } from '../stores/emp.js'
 import { useDictStore } from '../stores/dict.js'
 import { usePermissionStore } from '../stores/permission.js'
 import { useAuthStore } from '../stores/auth.js'
+import * as XLSX from 'xlsx'
 
 const deptStore = useDeptStore()
 const empStore = useEmpStore()
@@ -399,17 +400,40 @@ function handleAvatarError(row) {
 }
 
 function exportData() {
-  const headers = ['姓名', '性别', '年龄', '手机号', '邮箱', '部门', '职位', '薪资']
-  const rows = filteredList.value.map(e => [
-    e.name, e.gender, e.age, e.phone, e.email, e.department_name || '-', e.position, e.salary
-  ])
-  let csv = '﻿' + headers.join(',') + '\n'
-  rows.forEach(r => { csv += r.join(',') + '\n' })
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = '员工信息.csv'
-  link.click()
+  // 准备Excel数据
+  const data = filteredList.value.map(e => ({
+    '姓名': e.name || '',
+    '账号': e.account || '',
+    '性别': e.gender || '',
+    '年龄': e.age || '',
+    '手机号': e.phone || '',
+    '邮箱': e.email || '',
+    '部门': e.department_path || e.department_name || '',
+    '职位': e.position || '',
+    '薪资': e.salary || 0
+  }))
+
+  // 创建工作簿和工作表
+  const wb = XLSX.utils.book_new()
+  const ws = XLSX.utils.json_to_sheet(data)
+
+  // 设置列宽
+  ws['!cols'] = [
+    { wch: 10 },  // 姓名
+    { wch: 12 },  // 账号
+    { wch: 6 },   // 性别
+    { wch: 6 },   // 年龄
+    { wch: 13 },  // 手机号
+    { wch: 20 },  // 邮箱
+    { wch: 25 },  // 部门
+    { wch: 12 },  // 职位
+    { wch: 10 }   // 薪资
+  ]
+
+  XLSX.utils.book_append_sheet(wb, ws, '员工信息')
+
+  // 导出文件
+  XLSX.writeFile(wb, '员工信息.xlsx')
   ElMessage.success('导出成功')
 }
 
