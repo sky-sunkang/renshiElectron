@@ -6,7 +6,8 @@
   },
   "files": [
     "dist/**/*",
-    "resources/**/*"
+    "resources/**/*",
+    "node_modules/sql.js/dist/sql-wasm.wasm"
   ],
   "mac": {
     "target": ["dmg", "zip"],

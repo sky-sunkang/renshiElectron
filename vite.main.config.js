@@ -1,5 +1,7 @@
 import { defineConfig } from 'vite'
 import path from 'path'
+import commonjs from '@rollup/plugin-commonjs'
+import { builtinModules } from 'module'
 
 export default defineConfig({
   root: path.resolve(__dirname, 'src/main'),
@@ -11,10 +13,13 @@ export default defineConfig({
       fileName: () => 'main.js',
     },
     rollupOptions: {
-      external: ['electron'],
+      // 外部化所有 Node.js 内置模块和 electron
+      external: [...builtinModules, 'electron', 'sql.js'],
+      plugins: [commonjs()],
     },
     emptyOutDir: true,
     sourcemap: true,
+    minify: false,
   },
   resolve: {
     alias: {

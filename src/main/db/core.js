@@ -9,11 +9,20 @@ const path = require('path')
 const { app } = require('electron')
 
 // 数据库文件路径
-const dbPath = app.isPackaged
-  ? path.join(app.getPath('userData'), 'app.db')
-  : path.join(__dirname, '../../../app.db')
-
+let dbPath
 let db
+
+/**
+ * 获取数据库文件路径
+ */
+function getDbPath() {
+  if (!dbPath) {
+    dbPath = app.isPackaged
+      ? path.join(app.getPath('userData'), 'app.db')
+      : path.join(__dirname, '../../../app.db')
+  }
+  return dbPath
+}
 
 /**
  * 获取数据库实例
@@ -27,8 +36,9 @@ function getDb() {
  * 持久化数据库到文件
  */
 function save() {
+  if (!db) return
   const data = db.export()
-  fs.writeFileSync(dbPath, Buffer.from(data))
+  fs.writeFileSync(getDbPath(), Buffer.from(data))
 }
 
 /**
@@ -36,16 +46,27 @@ function save() {
  * 如果存在历史数据库文件则加载，否则创建新数据库
  */
 async function initConnection() {
-  SQL = await initSqlJs()
+  const dbFilePath = getDbPath()
 
-  if (fs.existsSync(dbPath)) {
-    const filebuffer = fs.readFileSync(dbPath)
+  // sql.js 配置 - 打包后需要指定 WASM 文件路径
+  const sqlJsConfig = {}
+  if (app.isPackaged) {
+    // 打包后，WASM 文件在 app.asar 中
+    sqlJsConfig.locateFile = (file) => {
+      return path.join(__dirname, '../../node_modules/sql.js/dist', file)
+    }
+  }
+
+  const SQL = await initSqlJs(sqlJsConfig)
+
+  if (fs.existsSync(dbFilePath)) {
+    const filebuffer = fs.readFileSync(dbFilePath)
     db = new SQL.Database(filebuffer)
   } else {
     db = new SQL.Database()
   }
 
-  console.log('[DB] dbPath:', dbPath)
+  console.log('[DB] dbPath:', dbFilePath)
 }
 
 /**

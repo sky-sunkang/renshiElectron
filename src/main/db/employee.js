@@ -236,13 +236,13 @@ function generateDefaultAvatar(name) {
  * 更新员工头像
  * @param {number} id - 员工ID
  * @param {string} avatarBase64 - 头像Base64数据
- * @param {number} updatedBy - 修改人ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
  */
-function updateAvatar(id, avatarBase64, updatedBy) {
+function updateAvatar(id, avatarBase64, operator) {
   const db = getDb()
   const stmt = db.prepare('UPDATE employees SET avatar = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([avatarBase64, updatedBy || null, id])
+  stmt.run([avatarBase64, operator?.id || null, id])
   stmt.free()
   save()
   return true

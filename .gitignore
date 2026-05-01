@@ -3,5 +3,4 @@ dist/*
 app.db
 app.db-shm
 app.db-wal
-auto-imports.d.ts
-components.d.ts
+release/*

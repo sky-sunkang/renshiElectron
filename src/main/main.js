@@ -7,9 +7,17 @@ const createWindow = () => {
     ? path.join(__dirname, '../preload/preload.js')
     : path.join(__dirname, '../../src/preload/index.js')
 
-  const iconPath = app.isPackaged
-    ? path.join(__dirname, '../resources/icon.png')
-    : path.join(__dirname, '../../resources/icon.png')
+  // macOS 使用 icns，其他平台使用 png
+  let iconPath
+  if (app.isPackaged) {
+    iconPath = path.join(__dirname, '../resources/icon.png')
+  } else {
+    if (process.platform === 'darwin') {
+      iconPath = path.join(__dirname, '../../resources/icon.icns')
+    } else {
+      iconPath = path.join(__dirname, '../../resources/icon.png')
+    }
+  }
 
   // 获取屏幕尺寸，设置窗口为屏幕的80%
   const primaryDisplay = screen.getPrimaryDisplay()

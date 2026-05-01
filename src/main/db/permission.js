@@ -361,49 +361,58 @@ function addUserRole(userId, roleId, operator) {
   const infoStmt = db.prepare(`
     SELECT e.name as userName, r.name as roleName
     FROM employees e, roles r
-    WHERE e.id = ? AND r.id = ?
+    WHERE e.id = ? AND r.id = ? AND e.is_deleted = 0 AND r.is_deleted = 0
   `)
   infoStmt.bind([userId, roleId])
   infoStmt.step()
   const info = infoStmt.getAsObject()
   infoStmt.free()
 
+  // 如果找不到用户或角色，返回false
+  if (!info || info.userName === undefined) {
+    console.log('[DB] addUserRole: user or role not found', { userId, roleId })
+    return false
+  }
+
   // 检查是否已有该角色（包括已删除的）
   const checkStmt = db.prepare('SELECT id, is_deleted FROM user_roles WHERE user_id = ? AND role_id = ?')
   checkStmt.bind([userId, roleId])
-  checkStmt.step()
-  const existing = checkStmt.getAsObject()
+  const hasExisting = checkStmt.step()
+  let existing = null
+  if (hasExisting) {
+    existing = checkStmt.getAsObject()
+  }
   checkStmt.free()
 
-  if (existing) {
+  if (existing && existing.id !== undefined) {
     if (existing.is_deleted === 0) {
       // 已存在且未删除，无需操作
       return true
     } else {
       // 已存在但已删除，恢复它
       const stmt = db.prepare('UPDATE user_roles SET is_deleted = 0, created_by = ? WHERE id = ?')
-      stmt.run([operator?.id || null, existing.id])
+      stmt.run([operator?.id ?? null, existing.id])
       stmt.free()
       save()
     }
   } else {
     // 不存在，新增
     const stmt = db.prepare('INSERT INTO user_roles (user_id, role_id, created_by, is_deleted) VALUES (?, ?, ?, 0)')
-    stmt.run([userId, roleId, operator?.id || null])
+    stmt.run([userId, roleId, operator?.id ?? null])
     stmt.free()
     save()
   }
 
   // 记录操作日志
   addLog({
-    userId: operator?.id,
-    userName: operator?.name,
+    userId: operator?.id ?? null,
+    userName: operator?.name ?? null,
     module: '角色管理',
     action: '分配用户',
     targetType: '角色',
     targetId: roleId,
-    targetName: info?.roleName,
-    detail: JSON.stringify({ userId, userName: info?.userName })
+    targetName: info.roleName,
+    detail: JSON.stringify({ userId, userName: info.userName })
   })
   return true
 }
@@ -422,13 +431,14 @@ function removeUserRole(userId, roleId, operator) {
   const infoStmt = db.prepare(`
     SELECT e.name as userName, r.name as roleName
     FROM employees e, roles r
-    WHERE e.id = ? AND r.id = ?
+    WHERE e.id = ? AND r.id = ? AND e.is_deleted = 0 AND r.is_deleted = 0
   `)
   infoStmt.bind([userId, roleId])
   infoStmt.step()
   const info = infoStmt.getAsObject()
   infoStmt.free()
 
+  // 如果找不到用户或角色，仍然执行删除操作
   const stmt = db.prepare('UPDATE user_roles SET is_deleted = 1 WHERE user_id = ? AND role_id = ?')
   stmt.run([userId, roleId])
   stmt.free()
@@ -442,8 +452,8 @@ function removeUserRole(userId, roleId, operator) {
     action: '移除用户',
     targetType: '角色',
     targetId: roleId,
-    targetName: info?.roleName,
-    detail: JSON.stringify({ userId, userName: info?.userName })
+    targetName: info?.roleName || '',
+    detail: JSON.stringify({ userId, userName: info?.userName || '' })
   })
   return true
 }

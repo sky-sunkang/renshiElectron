@@ -288,7 +288,8 @@ async function handleChangePassword() {
     ElMessage.error('旧密码错误')
     return
   }
-  await window.electronAPI.emp.updatePassword(currentUser.value.id, pwdForm.newPassword)
+  const operator = { id: currentUser.value.id, name: currentUser.value.name }
+  await window.electronAPI.emp.updatePassword(currentUser.value.id, pwdForm.newPassword, operator)
   ElMessage.success('密码修改成功，请重新登录')
   pwdDialogVisible.value = false
   handleLogout()

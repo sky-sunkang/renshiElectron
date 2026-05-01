@@ -335,31 +335,38 @@ async function handleAvatarChange(uploadFile) {
 }
 
 async function save() {
-  await formRef.value.validate()
-  const data = { ...form }
-  delete data.id
-  delete data.department_name
-  delete data.created_at
-  if (!data.password) data.password = '123456'
-  const operator = getOperator()
-  if (form.id) {
-    await window.electronAPI.emp.update(form.id, data, operator)
-    // 如果有新头像，上传头像
-    if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
-      await window.electronAPI.emp.updateAvatar(form.id, avatarPreview.value, operator)
+  try {
+    await formRef.value.validate()
+    const data = { ...form }
+    delete data.id
+    delete data.department_name
+    delete data.department_path
+    delete data.created_at
+    delete data.avatar
+    if (!data.password) data.password = '123456'
+    const operator = getOperator()
+    if (form.id) {
+      await window.electronAPI.emp.update(form.id, data, operator)
+      // 如果有新头像，上传头像
+      if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
+        await window.electronAPI.emp.updateAvatar(form.id, avatarPreview.value, operator)
+      }
+      ElMessage.success('更新成功')
+    } else {
+      const newId = await window.electronAPI.emp.add(data, operator)
+      // 如果有头像，上传头像
+      if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
+        await window.electronAPI.emp.updateAvatar(newId, avatarPreview.value, operator)
+      }
+      ElMessage.success('添加成功')
     }
-    ElMessage.success('更新成功')
-  } else {
-    const newId = await window.electronAPI.emp.add(data, operator)
-    // 如果有头像，上传头像
-    if (avatarPreview.value && avatarPreview.value.startsWith('data:')) {
-      await window.electronAPI.emp.updateAvatar(newId, avatarPreview.value, operator)
-    }
-    ElMessage.success('添加成功')
+    dialogVisible.value = false
+    avatarPreview.value = ''
+    await load()
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败: ' + (error.message || error))
   }
-  dialogVisible.value = false
-  avatarPreview.value = ''
-  await load()
 }
 
 async function remove(id) {

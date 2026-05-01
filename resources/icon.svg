@@ -1,18 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <!-- 背景 -->
-  <rect width="256" height="256" rx="32" fill="#3b82f6"/>
+  <!-- 背景 - 渐变蓝色 -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="32" fill="url(#bgGradient)"/>
 
-  <!-- 外圈 -->
-  <circle cx="128" cy="128" r="100" fill="none" stroke="white" stroke-width="8" opacity="0.3"/>
+  <!-- 组织架构树形结构 -->
+  <!-- 顶层节点 - CEO -->
+  <rect x="108" y="40" width="40" height="40" rx="8" fill="white"/>
+  <circle cx="128" cy="55" r="10" fill="#3b82f6"/>
+  <rect x="118" y="68" width="20" height="6" rx="3" fill="#3b82f6"/>
 
-  <!-- 人物图标 - 头部 -->
-  <circle cx="128" cy="100" r="35" fill="white"/>
+  <!-- 连接线 -->
+  <line x1="128" y1="80" x2="128" y2="100" stroke="white" stroke-width="3" opacity="0.8"/>
+  <line x1="70" y1="100" x2="186" y2="100" stroke="white" stroke-width="3" opacity="0.8"/>
+  <line x1="70" y1="100" x2="70" y2="115" stroke="white" stroke-width="3" opacity="0.8"/>
+  <line x1="128" y1="100" x2="128" y2="115" stroke="white" stroke-width="3" opacity="0.8"/>
+  <line x1="186" y1="100" x2="186" y2="115" stroke="white" stroke-width="3" opacity="0.8"/>
 
-  <!-- 人物图标 - 身体 -->
-  <path d="M 70 200 Q 70 150 128 150 Q 186 150 186 200 L 186 220 L 70 220 Z" fill="white"/>
+  <!-- 第二层节点 - 部门经理 -->
+  <rect x="50" y="115" width="40" height="40" rx="8" fill="white" opacity="0.9"/>
+  <circle cx="70" cy="130" r="8" fill="#22c55e"/>
+  <rect x="62" y="142" width="16" height="5" rx="2" fill="#22c55e"/>
 
-  <!-- 信息线条 -->
-  <rect x="160" y="70" width="50" height="8" rx="4" fill="white" opacity="0.8"/>
-  <rect x="160" y="90" width="35" height="8" rx="4" fill="white" opacity="0.6"/>
-  <rect x="160" y="110" width="45" height="8" rx="4" fill="white" opacity="0.4"/>
+  <rect x="108" y="115" width="40" height="40" rx="8" fill="white" opacity="0.9"/>
+  <circle cx="128" cy="130" r="8" fill="#f59e0b"/>
+  <rect x="120" y="142" width="16" height="5" rx="2" fill="#f59e0b"/>
+
+  <rect x="166" y="115" width="40" height="40" rx="8" fill="white" opacity="0.9"/>
+  <circle cx="186" cy="130" r="8" fill="#ef4444"/>
+  <rect x="178" y="142" width="16" height="5" rx="2" fill="#ef4444"/>
+
+  <!-- 第三层连接线 -->
+  <line x1="70" y1="155" x2="70" y2="170" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="128" y1="155" x2="128" y2="170" stroke="white" stroke-width="2" opacity="0.6"/>
+  <line x1="186" y1="155" x2="186" y2="170" stroke="white" stroke-width="2" opacity="0.6"/>
+
+  <!-- 第三层节点 - 员工 -->
+  <rect x="55" y="170" width="30" height="30" rx="6" fill="white" opacity="0.7"/>
+  <circle cx="70" cy="182" r="6" fill="#64748b"/>
+  <rect x="64" y="190" width="12" height="4" rx="2" fill="#64748b"/>
+
+  <rect x="113" y="170" width="30" height="30" rx="6" fill="white" opacity="0.7"/>
+  <circle cx="128" cy="182" r="6" fill="#64748b"/>
+  <rect x="122" y="190" width="12" height="4" rx="2" fill="#64748b"/>
+
+  <rect x="171" y="170" width="30" height="30" rx="6" fill="white" opacity="0.7"/>
+  <circle cx="186" cy="182" r="6" fill="#64748b"/>
+  <rect x="180" y="190" width="12" height="4" rx="2" fill="#64748b"/>
+
+  <!-- 底部文字区域 -->
+  <rect x="40" y="215" width="176" height="25" rx="6" fill="white" opacity="0.2"/>
+  <text x="128" y="232" font-family="Arial, sans-serif" font-size="12" fill="white" text-anchor="middle" font-weight="bold">HR SYSTEM</text>
 </svg>

@@ -25,14 +25,14 @@ function addLog(params) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, unixepoch())
   `)
   stmt.run([
-    params.userId,
-    params.userName,
+    params.userId ?? null,
+    params.userName ?? null,
     params.module,
     params.action,
-    params.targetType || null,
-    params.targetId || null,
-    params.targetName || null,
-    params.detail || null
+    params.targetType ?? null,
+    params.targetId ?? null,
+    params.targetName ?? null,
+    params.detail ?? null
   ])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')

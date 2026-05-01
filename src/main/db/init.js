@@ -674,11 +674,24 @@ function initPermissionSeedData() {
     { code: 'role:assignUser', name: '分配用户', type: 'button', description: '为用户分配角色按钮' }
   ]
 
-  const permStmt = db.prepare(`
-    INSERT OR IGNORE INTO permissions (code, name, type, description) VALUES (?, ?, ?, ?)
-  `)
-  permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
-  permStmt.free()
+  // 检查是否已有权限数据（排除已删除的）
+  const permCheckStmt = db.prepare('SELECT COUNT(*) as c FROM permissions WHERE is_deleted = 0')
+  permCheckStmt.step()
+  const permCount = Number(permCheckStmt.getAsObject().c)
+  permCheckStmt.free()
+
+  if (permCount === 0) {
+    // 没有权限数据，初始化
+    const permStmt = db.prepare('INSERT INTO permissions (code, name, type, description, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
+    permStmt.free()
+    console.log('[DB] permissions seeded')
+  } else {
+    // 已有权限数据，使用 INSERT OR IGNORE 防止重复
+    const permStmt = db.prepare('INSERT OR IGNORE INTO permissions (code, name, type, description, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
+    permStmt.free()
+  }
 
   // 分配权限给角色
   assignPermissionsToRoles()
