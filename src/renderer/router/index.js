@@ -6,7 +6,8 @@ import DictionaryManage from '../views/DictionaryManage.vue'
 import RolePermissionManage from '../views/RolePermissionManage.vue'
 import RoleUserManage from '../views/RoleUserManage.vue'
 import OperationLog from '../views/OperationLog.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document } from '@element-plus/icons-vue'
+import DatabaseManage from '../views/DatabaseManage.vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid } from '@element-plus/icons-vue'
 
 const routes = [
   { path: '/', redirect: '/employee' },
@@ -44,6 +45,11 @@ const routes = [
     path: '/operation-log',
     component: OperationLog,
     meta: { title: '操作日志', icon: Document, permission: 'menu:log' }
+  },
+  {
+    path: '/database',
+    component: DatabaseManage,
+    meta: { title: '数据库管理', icon: Grid }
   },
 ]
 

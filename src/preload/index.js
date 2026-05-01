@@ -64,4 +64,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getActions: () => ipcRenderer.invoke('log:getActions'),
     clear: (days) => ipcRenderer.invoke('log:clear', days),
   },
+  db: {
+    getTables: () => ipcRenderer.invoke('db:getTables'),
+    getTableSchema: (tableName) => ipcRenderer.invoke('db:getTableSchema', tableName),
+    getTableData: (tableName, options) => ipcRenderer.invoke('db:getTableData', tableName, options),
+    updateTableData: (tableName, id, data) => ipcRenderer.invoke('db:updateTableData', tableName, id, data),
+    deleteTableData: (tableName, id) => ipcRenderer.invoke('db:deleteTableData', tableName, id),
+    executeSql: (sql) => ipcRenderer.invoke('db:executeSql', sql),
+    getComments: () => ipcRenderer.invoke('db:getComments'),
+  },
 })

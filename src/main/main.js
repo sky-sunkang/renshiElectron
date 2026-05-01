@@ -106,6 +106,15 @@ app.whenReady().then(() => {
   ipcMain.handle('log:getActions', () => db.getLogActions())
   ipcMain.handle('log:clear', (_, days) => db.clearLogs(days))
 
+  // Database management
+  ipcMain.handle('db:getTables', () => db.getTables())
+  ipcMain.handle('db:getTableSchema', (_, tableName) => db.getTableSchema(tableName))
+  ipcMain.handle('db:getTableData', (_, tableName, options) => db.getTableData(tableName, options))
+  ipcMain.handle('db:updateTableData', (_, tableName, id, data) => db.updateTableData(tableName, id, data))
+  ipcMain.handle('db:deleteTableData', (_, tableName, id) => db.deleteTableData(tableName, id))
+  ipcMain.handle('db:executeSql', (_, sql) => db.executeSql(sql))
+  ipcMain.handle('db:getComments', () => ({ tableComments: db.tableComments, fieldComments: db.fieldComments }))
+
   // Window controls
   ipcMain.handle('window:minimize', () => {
     const win = BrowserWindow.getFocusedWindow()

@@ -11,6 +11,7 @@ const statistics = require('./statistics')
 const permission = require('./permission')
 const log = require('./log')
 const init = require('./init')
+const comments = require('./comments')
 
 /**
  * 初始化数据库
@@ -24,6 +25,132 @@ async function initDatabase() {
   init.initDatabase()
 
   console.log('[DB] ready')
+}
+
+/**
+ * 获取所有表名
+ * @returns {Array} 表名列表
+ */
+function getTables() {
+  const db = core.getDb()
+  const stmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+  const tables = []
+  while (stmt.step()) {
+    tables.push(stmt.getAsObject().name)
+  }
+  stmt.free()
+  return tables
+}
+
+/**
+ * 获取表结构
+ * @param {string} tableName - 表名
+ * @returns {Array} 列信息列表
+ */
+function getTableSchema(tableName) {
+  const db = core.getDb()
+  const stmt = db.prepare(`PRAGMA table_info(${tableName})`)
+  const columns = []
+  while (stmt.step()) {
+    columns.push(stmt.getAsObject())
+  }
+  stmt.free()
+  return columns
+}
+
+/**
+ * 查询表数据
+ * @param {string} tableName - 表名
+ * @param {Object} options - 查询选项
+ * @param {number} options.page - 页码
+ * @param {number} options.pageSize - 每页数量
+ * @param {string} options.where - WHERE 条件
+ * @param {string} options.orderBy - 排序字段
+ * @returns {Object} { list: Array, total: number }
+ */
+function getTableData(tableName, options = {}) {
+  const db = core.getDb()
+  const page = options.page || 1
+  const pageSize = options.pageSize || 50
+  const offset = (page - 1) * pageSize
+  const where = options.where ? `WHERE ${options.where}` : ''
+  const orderBy = options.orderBy ? `ORDER BY ${options.orderBy}` : ''
+
+  // 查询总数
+  const countStmt = db.prepare(`SELECT COUNT(*) as total FROM ${tableName} ${where}`)
+  countStmt.step()
+  const total = countStmt.getAsObject().total
+  countStmt.free()
+
+  // 查询数据
+  const listStmt = db.prepare(`SELECT * FROM ${tableName} ${where} ${orderBy} LIMIT ? OFFSET ?`)
+  listStmt.bind([pageSize, offset])
+  const list = []
+  while (listStmt.step()) {
+    list.push(listStmt.getAsObject())
+  }
+  listStmt.free()
+
+  return { list, total }
+}
+
+/**
+ * 更新表数据
+ * @param {string} tableName - 表名
+ * @param {number} id - 记录ID
+ * @param {Object} data - 更新数据
+ * @returns {boolean} 更新成功返回true
+ */
+function updateTableData(tableName, id, data) {
+  const db = core.getDb()
+  const columns = Object.keys(data).filter(k => k !== 'id')
+  const setClause = columns.map(k => `${k} = ?`).join(', ')
+  const values = columns.map(k => data[k])
+
+  const stmt = db.prepare(`UPDATE ${tableName} SET ${setClause} WHERE id = ?`)
+  stmt.run([...values, id])
+  stmt.free()
+  core.save()
+  return true
+}
+
+/**
+ * 删除表数据
+ * @param {string} tableName - 表名
+ * @param {number} id - 记录ID
+ * @returns {boolean} 删除成功返回true
+ */
+function deleteTableData(tableName, id) {
+  const db = core.getDb()
+  const stmt = db.prepare(`DELETE FROM ${tableName} WHERE id = ?`)
+  stmt.run([id])
+  stmt.free()
+  core.save()
+  return true
+}
+
+/**
+ * 执行SQL语句
+ * @param {string} sql - SQL语句
+ * @returns {Array|Object} 查询结果或执行结果
+ */
+function executeSql(sql) {
+  const db = core.getDb()
+  const sqlUpper = sql.trim().toUpperCase()
+
+  if (sqlUpper.startsWith('SELECT') || sqlUpper.startsWith('PRAGMA')) {
+    const stmt = db.prepare(sql)
+    const results = []
+    while (stmt.step()) {
+      results.push(stmt.getAsObject())
+    }
+    stmt.free()
+    return results
+  } else {
+    db.run(sql)
+    core.save()
+    return { affected: db.getRowsModified() }
+  }
 }
 
 module.exports = {
@@ -78,5 +205,15 @@ module.exports = {
   getLogs: log.getLogs,
   getLogModules: log.getModules,
   getLogActions: log.getActions,
-  clearLogs: log.clearLogs
+  clearLogs: log.clearLogs,
+  // 数据库管理
+  getTables,
+  getTableSchema,
+  getTableData,
+  updateTableData,
+  deleteTableData,
+  executeSql,
+  // 表和字段注释
+  tableComments: comments.tableComments,
+  fieldComments: comments.fieldComments
 }

@@ -34,7 +34,8 @@
 │   │       ├── dict.js          # 字典模块：字典类型和字典项管理
 │   │       ├── permission.js    # 权限模块：RBAC 权限管理
 │   │       ├── log.js           # 操作日志模块：日志记录、查询、清理
-│   │       └── statistics.js    # 统计模块：各类统计数据查询
+│   │       ├── statistics.js    # 统计模块：各类统计数据查询
+│   │       └── comments.js      # 表和字段注释：用于数据库管理页面显示
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
 │   ├── renderer/                # 渲染进程（Vue3 前端）
@@ -106,6 +107,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）、操作日志记录
 - `log.js` — 操作日志记录、查询、清理
 - `statistics.js` — 统计数据查询
+- `comments.js` — 表和字段注释（数据库管理页面显示）
 
 **表结构：**
 - `departments`：id, name, description, parent_id, path_ids, path_names, is_deleted, created_by, created_at, updated_by, updated_at
@@ -160,3 +162,4 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **表设计**：所有的表都要删除状态创建人和时间，修改人和时间，所有的删除都需要使用逻辑删除。
 - **操作日志记录**：所有操作需要增加操作日志，日志格式：`用户名 时间 操作类型 操作对象 详情`
 - **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化时检查数据是否已存在（包括已删除的记录），避免重复插入
+- **表和字段注释**：所有表和字段的中文注释维护在 `src/main/db/comments.js` 文件中，每次新增或修改表结构时，必须同步更新 `comments.js` 中的 `tableComments` 和 `fieldComments` 对象，以便在数据库管理页面正确显示注释信息
