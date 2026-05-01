@@ -649,6 +649,7 @@ function initPermissionSeedData() {
     { code: 'menu:statistics', name: '数据统计菜单', type: 'menu', description: '访问数据统计页面' },
     { code: 'menu:role', name: '角色管理菜单', type: 'menu', description: '访问角色管理页面' },
     { code: 'menu:log', name: '操作日志菜单', type: 'menu', description: '访问操作日志页面' },
+    { code: 'menu:database', name: '数据库管理菜单', type: 'menu', description: '访问数据库管理页面' },
     // 员工管理按钮权限
     { code: 'emp:add', name: '新增员工', type: 'button', description: '新增员工按钮' },
     { code: 'emp:edit', name: '编辑员工', type: 'button', description: '编辑员工按钮' },
@@ -674,24 +675,18 @@ function initPermissionSeedData() {
     { code: 'role:assignUser', name: '分配用户', type: 'button', description: '为用户分配角色按钮' }
   ]
 
-  // 检查是否已有权限数据（排除已删除的）
-  const permCheckStmt = db.prepare('SELECT COUNT(*) as c FROM permissions WHERE is_deleted = 0')
-  permCheckStmt.step()
-  const permCount = Number(permCheckStmt.getAsObject().c)
-  permCheckStmt.free()
-
-  if (permCount === 0) {
-    // 没有权限数据，初始化
-    const permStmt = db.prepare('INSERT INTO permissions (code, name, type, description, is_deleted) VALUES (?, ?, ?, ?, 0)')
-    permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
-    permStmt.free()
-    console.log('[DB] permissions seeded')
-  } else {
-    // 已有权限数据，使用 INSERT OR IGNORE 防止重复
-    const permStmt = db.prepare('INSERT OR IGNORE INTO permissions (code, name, type, description, is_deleted) VALUES (?, ?, ?, ?, 0)')
-    permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
-    permStmt.free()
+  // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
+  // 先确保permissions表有UNIQUE约束
+  try {
+    db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_permissions_code ON permissions(code)')
+  } catch (e) {
+    // 索引已存在
   }
+
+  const permStmt = db.prepare('INSERT OR IGNORE INTO permissions (code, name, type, description, is_deleted) VALUES (?, ?, ?, ?, 0)')
+  permissions.forEach(p => permStmt.run([p.code, p.name, p.type, p.description]))
+  permStmt.free()
+  console.log('[DB] permissions initialized')
 
   // 分配权限给角色
   assignPermissionsToRoles()
@@ -733,6 +728,8 @@ function assignPermissionsToRoles() {
 
   if (count > 0) {
     console.log('[DB] role_permissions already initialized, skip')
+    // 但仍需为超级管理员补充新权限
+    syncSuperAdminPermissions(sysadminId)
     return
   }
 
@@ -746,7 +743,7 @@ function assignPermissionsToRoles() {
   allPermissions.free()
   sysadminStmt.free()
 
-  // 管理员权限（除角色管理外）
+  // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
     'menu:employee', 'menu:department', 'menu:dictionary', 'menu:statistics',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export',
@@ -774,6 +771,43 @@ function assignPermissionsToRoles() {
   const userStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   userPermissions.forEach(code => userStmt.run([userId, code]))
   userStmt.free()
+}
+
+/**
+ * 同步超级管理员权限（确保拥有所有权限）
+ * @param {number} sysadminId - 超级管理员角色ID
+ */
+function syncSuperAdminPermissions(sysadminId) {
+  const db = getDb()
+
+  // 获取超级管理员已有的权限
+  const existingStmt = db.prepare('SELECT permission_code FROM role_permissions WHERE role_id = ? AND is_deleted = 0')
+  existingStmt.bind([sysadminId])
+  const existingPermissions = new Set()
+  while (existingStmt.step()) {
+    existingPermissions.add(existingStmt.getAsObject().permission_code)
+  }
+  existingStmt.free()
+
+  // 获取所有权限
+  const allStmt = db.prepare('SELECT code FROM permissions WHERE is_deleted = 0')
+  const newPermissions = []
+  while (allStmt.step()) {
+    const code = allStmt.getAsObject().code
+    if (!existingPermissions.has(code)) {
+      newPermissions.push(code)
+    }
+  }
+  allStmt.free()
+
+  // 添加缺失的权限
+  if (newPermissions.length > 0) {
+    const insertStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code, is_deleted) VALUES (?, ?, 0)')
+    newPermissions.forEach(code => insertStmt.run([sysadminId, code]))
+    insertStmt.free()
+    save()
+    console.log(`[DB] synced ${newPermissions.length} new permissions to sysadmin`)
+  }
 }
 
 /**

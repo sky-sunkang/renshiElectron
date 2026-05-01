@@ -49,7 +49,7 @@ const routes = [
   {
     path: '/database',
     component: DatabaseManage,
-    meta: { title: '数据库管理', icon: Grid }
+    meta: { title: '数据库管理', icon: Grid, permission: 'menu:database' }
   },
 ]
 
