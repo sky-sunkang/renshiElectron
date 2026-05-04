@@ -645,8 +645,11 @@ function initPermissionSeedData() {
     // 菜单权限
     { code: 'menu:employee', name: '员工管理菜单', type: 'menu', description: '访问员工管理页面' },
     { code: 'menu:department', name: '部门管理菜单', type: 'menu', description: '访问部门管理页面' },
+    { code: 'menu:statistics', name: '统计管理菜单', type: 'menu', description: '访问统计管理页面' },
+    { code: 'menu:statistics:employee', name: '员工统计菜单', type: 'menu', description: '访问员工统计页面' },
+    { code: 'menu:statistics:log', name: '操作统计菜单', type: 'menu', description: '访问操作统计页面' },
+    { code: 'menu:system', name: '系统管理菜单', type: 'menu', description: '访问系统管理页面' },
     { code: 'menu:dictionary', name: '字典管理菜单', type: 'menu', description: '访问字典管理页面' },
-    { code: 'menu:statistics', name: '数据统计菜单', type: 'menu', description: '访问数据统计页面' },
     { code: 'menu:role', name: '角色管理菜单', type: 'menu', description: '访问角色管理页面' },
     { code: 'menu:log', name: '操作日志菜单', type: 'menu', description: '访问操作日志页面' },
     { code: 'menu:database', name: '数据库管理菜单', type: 'menu', description: '访问数据库管理页面' },
@@ -746,7 +749,7 @@ function assignPermissionsToRoles() {
 
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
-    'menu:employee', 'menu:department', 'menu:dictionary', 'menu:statistics',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:system', 'menu:dictionary',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
     'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete'
@@ -757,7 +760,7 @@ function assignPermissionsToRoles() {
 
   // 人事专员权限
   const hrPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:log',
     'emp:add', 'emp:edit', 'emp:export',
     'dept:add', 'dept:edit'
   ]
@@ -767,7 +770,7 @@ function assignPermissionsToRoles() {
 
   // 普通用户权限（仅查看）
   const userPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics'
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log'
   ]
   const userStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   userPermissions.forEach(code => userStmt.run([userId, code]))

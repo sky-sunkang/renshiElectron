@@ -3,12 +3,13 @@ import Login from '../views/Login.vue'
 import EmployeeManage from '../views/EmployeeManage.vue'
 import DepartmentManage from '../views/DepartmentManage.vue'
 import StatisticsPage from '../views/StatisticsPage.vue'
+import LogStatistics from '../views/LogStatistics.vue'
 import DictionaryManage from '../views/DictionaryManage.vue'
 import RolePermissionManage from '../views/RolePermissionManage.vue'
 import RoleUserManage from '../views/RoleUserManage.vue'
 import OperationLog from '../views/OperationLog.vue'
 import DatabaseManage from '../views/DatabaseManage.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid } from '@element-plus/icons-vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -29,33 +30,50 @@ const routes = [
   },
   {
     path: '/statistics',
-    component: StatisticsPage,
-    meta: { title: '数据统计', icon: TrendCharts, permission: 'menu:statistics' }
+    meta: { title: '统计管理', icon: DataAnalysis, permission: 'menu:statistics' },
+    children: [
+      {
+        path: '/statistics/employee',
+        component: StatisticsPage,
+        meta: { title: '员工统计', icon: TrendCharts, permission: 'menu:statistics:employee' }
+      },
+      {
+        path: '/statistics/log',
+        component: LogStatistics,
+        meta: { title: '操作统计', icon: Histogram, permission: 'menu:statistics:log' }
+      }
+    ]
   },
   {
-    path: '/dictionary',
-    component: DictionaryManage,
-    meta: { title: '字典管理', icon: CollectionTag, permission: 'menu:dictionary' }
-  },
-  {
-    path: '/role-user',
-    component: RoleUserManage,
-    meta: { title: '角色管理', icon: UserFilled, permission: 'menu:role' }
-  },
-  {
-    path: '/role-permission',
-    component: RolePermissionManage,
-    meta: { title: '权限管理', icon: Lock, permission: 'menu:role' }
-  },
-  {
-    path: '/operation-log',
-    component: OperationLog,
-    meta: { title: '操作日志', icon: Document, permission: 'menu:log' }
-  },
-  {
-    path: '/database',
-    component: DatabaseManage,
-    meta: { title: '数据库管理', icon: Grid, permission: 'menu:database' }
+    path: '/system',
+    meta: { title: '系统管理', icon: Setting, permission: 'menu:system' },
+    children: [
+      {
+        path: '/dictionary',
+        component: DictionaryManage,
+        meta: { title: '字典管理', icon: CollectionTag, permission: 'menu:dictionary' }
+      },
+      {
+        path: '/role-user',
+        component: RoleUserManage,
+        meta: { title: '角色管理', icon: UserFilled, permission: 'menu:role' }
+      },
+      {
+        path: '/role-permission',
+        component: RolePermissionManage,
+        meta: { title: '权限管理', icon: Lock, permission: 'menu:role' }
+      },
+      {
+        path: '/operation-log',
+        component: OperationLog,
+        meta: { title: '操作日志', icon: Document, permission: 'menu:log' }
+      },
+      {
+        path: '/database',
+        component: DatabaseManage,
+        meta: { title: '数据库管理', icon: Grid, permission: 'menu:database' }
+      }
+    ]
   },
 ]
 
@@ -75,7 +93,7 @@ router.beforeEach((to, _from, next) => {
   if (to.meta.noAuth) {
     // 已登录用户访问登录页，跳转到首页
     if (userStr && to.path === '/login') {
-      next('/employee')
+      next('/statistics/employee')
       return
     }
     next()

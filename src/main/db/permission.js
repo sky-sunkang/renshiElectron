@@ -282,8 +282,8 @@ function setRolePermissions(roleId, permissionCodes, operator) {
   const roleName = roleStmt.getAsObject()?.name
   roleStmt.free()
 
-  // 逻辑删除原有权限
-  const delStmt = db.prepare('UPDATE role_permissions SET is_deleted = 1 WHERE role_id = ?')
+  // 物理删除原有权限（避免 UNIQUE 约束冲突）
+  const delStmt = db.prepare('DELETE FROM role_permissions WHERE role_id = ?')
   delStmt.run([roleId])
   delStmt.free()
 

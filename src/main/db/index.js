@@ -184,6 +184,7 @@ module.exports = {
   deleteDictItem: dict.deleteDictItem,
   // 统计模块
   getStatistics: statistics.getStatistics,
+  getLogStatistics: statistics.getLogStatistics,
   // 权限模块
   getAllRoles: permission.getAllRoles,
   getRoleById: permission.getRoleById,

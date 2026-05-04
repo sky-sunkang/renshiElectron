@@ -44,10 +44,24 @@
             active-text-color="#3b82f6"
             @select="handleMenuSelect"
           >
-            <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-              <el-icon><component :is="item.meta.icon" /></el-icon>
-              <span>{{ item.meta.title }}</span>
-            </el-menu-item>
+            <template v-for="item in menuItems" :key="item.path">
+              <!-- 有子菜单的项 -->
+              <el-sub-menu v-if="item.children && item.children.length > 0" :index="item.path">
+                <template #title>
+                  <el-icon><component :is="item.meta.icon" /></el-icon>
+                  <span>{{ item.meta.title }}</span>
+                </template>
+                <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
+                  <el-icon><component :is="child.meta.icon" /></el-icon>
+                  <span>{{ child.meta.title }}</span>
+                </el-menu-item>
+              </el-sub-menu>
+              <!-- 没有子菜单的项 -->
+              <el-menu-item v-else :index="item.path">
+                <el-icon><component :is="item.meta.icon" /></el-icon>
+                <span>{{ item.meta.title }}</span>
+              </el-menu-item>
+            </template>
           </el-menu>
         </el-scrollbar>
       </div>
@@ -189,15 +203,45 @@ const menuItems = computed(() => {
   const perms = permissions.value
   console.log('[App] menuItems computed, isSuperAdmin:', admin, 'permissions:', perms)
 
-  return routerConfig.options.routes.filter(r => {
+  /**
+   * 检查权限
+   */
+  function hasPermission(permission) {
+    return admin || perms.includes(permission)
+  }
+
+  const result = []
+
+  routerConfig.options.routes.forEach(r => {
     // 排除重定向路由和不需要登录的路由（如登录页）
-    if (!r.meta || !r.meta.title || r.meta.noAuth) return false
-    // 检查权限 - 超级管理员直接显示所有菜单
-    if (r.meta.permission) {
-      return admin || perms.includes(r.meta.permission)
+    if (!r.meta || !r.meta.title || r.meta.noAuth) return
+
+    // 有子菜单的情况
+    if (r.children && r.children.length > 0) {
+      // 过滤有权限的子菜单
+      const filteredChildren = r.children.filter(child => {
+        if (!child.meta || !child.meta.permission) return true
+        return hasPermission(child.meta.permission)
+      })
+      // 如果有有权限的子菜单，则显示父菜单
+      if (filteredChildren.length > 0) {
+        result.push({ ...r, children: filteredChildren })
+      }
+      return
     }
-    return true
+
+    // 没有子菜单的情况，检查权限
+    if (r.meta.permission) {
+      if (hasPermission(r.meta.permission)) {
+        result.push(r)
+      }
+      return
+    }
+
+    result.push(r)
   })
+
+  return result
 })
 
 const activeMenu = computed(() => route.path)
@@ -210,6 +254,7 @@ const isMaximized = ref(false)
 
 function handleLogout() {
   authStore.logout()
+  router.push('/login')
 }
 
 const pwdDialogVisible = ref(false)
@@ -401,6 +446,16 @@ onMounted(async () => {
 }
 .sidebar-menu :deep(.el-menu-item:hover),
 .sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: #334155 !important;
+}
+/* 子菜单样式 */
+.sidebar-menu :deep(.el-sub-menu .el-menu) {
+  background-color: #1e293b !important;
+}
+.sidebar-menu :deep(.el-sub-menu .el-menu-item) {
+  background-color: #1e293b !important;
+}
+.sidebar-menu :deep(.el-sub-menu .el-menu-item:hover) {
   background-color: #334155 !important;
 }
 

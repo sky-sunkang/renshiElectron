@@ -58,7 +58,9 @@
 │   │   │   ├── RoleUserManage.vue   # 角色人员管理（左侧角色列表 + 右侧已分配人员）
 │   │   │   ├── RolePermissionManage.vue # 角色权限配置（左侧角色列表 + 右侧权限勾选）
 │   │   │   ├── OperationLog.vue     # 操作日志查看
-│   │   │   └── StatisticsPage.vue   # 数据统计（卡片 + 折线图 + 饼状图）
+│   │   │   ├── DatabaseManage.vue   # 数据库管理（表结构查看、数据浏览）
+│   │   │   ├── StatisticsPage.vue   # 员工统计（卡片 + 折线图 + 饼状图）
+│   │   │   └── LogStatistics.vue    # 操作统计（卡片 + 趋势图 + 分布图）
 │   │   └── components/          # 公共组件
 │   │       ├── Auth.vue             # 权限控制组件
 │   │       └── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
@@ -138,13 +140,35 @@ npm run electron:build    # 构建并打包 Electron 应用
 - 菜单权限（menu:xxx）：控制页面访问
 - 按钮权限（xxx:add/edit/delete）：控制操作按钮
 
+**菜单结构：**
+- 员工管理（menu:employee）
+- 部门管理（menu:department）
+- 统计管理（menu:statistics）
+  - 员工统计（menu:statistics:employee）
+  - 操作统计（menu:statistics:log）
+- 系统管理（menu:system）
+  - 字典管理（menu:dictionary）
+  - 角色管理（menu:role）
+  - 权限管理（menu:role）
+  - 操作日志（menu:log）
+  - 数据库管理（menu:database）
+
+**角色权限分配：**
+| 角色 | 菜单权限 |
+|------|----------|
+| 超级管理员 | 所有权限 |
+| 管理员 | 员工管理、部门管理、统计管理、系统管理（字典管理） |
+| 人事专员 | 员工管理、部门管理、统计管理、系统管理（操作日志） |
+| 普通用户 | 员工管理、部门管理、统计管理（仅查看） |
+
 ## 界面布局
 
 - **自定义标题栏**：`frame: false`，无边框窗口，顶部可拖拽区域 + 最小化/最大化/关闭按钮
-- **左侧侧边栏**：220px，深色背景，el-menu 导航
+- **左侧侧边栏**：220px，深色背景，el-menu 导航，支持多级子菜单
 - **右侧主内容区**：白色顶部栏（页面标题 + 用户信息 + 修改密码/退出）+  底部内容区（如果是左右结构的布局，各自占满内容区域高度，高度超出各自滚动）
 - **字典管理**：左侧字典类型列表，右侧字典项列表，其他模块有需要
 - **中文界面**：Element Plus 使用 `zhCn` locale，分页等组件显示中文
+- **登录页面**：账号密码登录 + 验证码，未登录自动跳转到登录页
 
 ## 注意事项
 
@@ -160,6 +184,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **公共代码组件化**：重复使用的代码尽量抽取为公共组件或工具函数，如部门树、字典下拉、表格操作栏等
 - **权限控制**：每次或调整模块需要相应的调整权限配置，登录后用户权限存储在 `currentUser.permissions` 中，通过 `v-if="hasPermission('xxx')"` 控制按钮显示
 - **新增菜单权限**：每次新增菜单页面时，必须在 `init.js` 的 `permissions` 数组中添加对应的菜单权限（如 `menu:xxx`），并在 `assignPermissionsToRoles` 函数中配置各角色的权限分配
+- **子菜单权限**：父菜单和子菜单需要分别配置权限，如统计管理（menu:statistics）和员工统计（menu:statistics:employee）
 - **表设计**：所有的表都要删除状态创建人和时间，修改人和时间，所有的删除都需要使用逻辑删除。
 - **操作日志记录**：所有操作需要增加操作日志，日志格式：`用户名 时间 操作类型 操作对象 详情`
 - **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化时检查数据是否已存在（包括已删除的记录），避免重复插入

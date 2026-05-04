@@ -30,6 +30,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   stats: {
     get: () => ipcRenderer.invoke('stats:get'),
+    getLogStats: () => ipcRenderer.invoke('stats:getLogStats'),
   },
   dict: {
     getTypes: () => ipcRenderer.invoke('dict:getTypes'),

@@ -72,6 +72,7 @@ app.whenReady().then(() => {
 
   // Statistics
   ipcMain.handle('stats:get', () => db.getStatistics())
+  ipcMain.handle('stats:getLogStats', () => db.getLogStatistics())
 
   // Dictionaries
   ipcMain.handle('dict:getTypes', () => db.getAllDictTypes())
