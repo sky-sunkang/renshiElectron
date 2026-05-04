@@ -53,65 +53,58 @@
             style="margin-bottom: 16px"
           />
 
-          <!-- 菜单权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">菜单权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in menuPermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 员工管理权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">员工管理权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in empPermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 部门管理权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">部门管理权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in deptPermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 字典管理权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">字典管理权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in dictPermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 角色管理权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">角色管理权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in rolePermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
-
-          <!-- 权限管理权限 -->
-          <div class="permission-section">
-            <h4 class="section-title">权限管理权限</h4>
-            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
-              <el-checkbox v-for="perm in permissionPermissions" :key="perm.code" :label="perm.code">
-                {{ perm.name }}
-              </el-checkbox>
-            </el-checkbox-group>
-          </div>
+          <!-- 按模块分组的权限 -->
+          <el-collapse v-model="expandedModules" class="permission-collapse">
+            <el-collapse-item v-for="module in permissionModules" :key="module.name" :name="module.name">
+              <template #title>
+                <span class="collapse-title">{{ module.name }}</span>
+                <span class="collapse-count">({{ getModuleCount(module) }})</span>
+              </template>
+              <!-- 菜单权限 -->
+              <div v-if="module.menus.length > 0" class="permission-group">
+                <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
+                  <el-checkbox v-for="perm in module.menus" :key="perm.code" :label="perm.code">
+                    {{ perm.name }}
+                  </el-checkbox>
+                </el-checkbox-group>
+              </div>
+              <!-- 操作权限 -->
+              <div v-if="module.actions.length > 0" class="permission-group">
+                <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
+                  <el-checkbox v-for="perm in module.actions" :key="perm.code" :label="perm.code">
+                    {{ perm.name }}
+                  </el-checkbox>
+                </el-checkbox-group>
+              </div>
+              <!-- 子模块 -->
+              <div v-if="module.children && module.children.length > 0" class="permission-children">
+                <div v-for="child in module.children" :key="child.name" class="child-module">
+                  <div class="child-header">
+                    <span class="child-title">{{ child.name }}</span>
+                    <span class="child-count">({{ getChildCount(child) }})</span>
+                  </div>
+                  <div class="child-content">
+                    <!-- 子模块菜单权限 -->
+                    <div v-if="child.menus.length > 0" class="permission-group inline">
+                      <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
+                        <el-checkbox v-for="perm in child.menus" :key="perm.code" :label="perm.code">
+                          {{ perm.name }}
+                        </el-checkbox>
+                      </el-checkbox-group>
+                    </div>
+                    <!-- 子模块操作权限 -->
+                    <div v-if="child.actions.length > 0" class="permission-group inline">
+                      <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
+                        <el-checkbox v-for="perm in child.actions" :key="perm.code" :label="perm.code">
+                          {{ perm.name }}
+                        </el-checkbox>
+                      </el-checkbox-group>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </el-collapse-item>
+          </el-collapse>
         </div>
       </el-scrollbar>
       <el-empty v-else description="请选择角色查看权限" />
@@ -139,14 +132,78 @@ const roles = ref([])
 const currentRole = ref(null)
 const permissions = ref([])
 const selectedPermissions = ref([])
+const expandedModules = ref(['员工管理', '部门管理', '统计管理', '系统管理'])
 
-// 按类型分组的权限
-const menuPermissions = computed(() => permissions.value.filter((p) => p.type === 'menu'))
-const empPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('emp:')))
-const deptPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('dept:')))
-const dictPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('dict:')))
-const rolePermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('role:')))
-const permissionPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('permission:')))
+/**
+ * 计算模块权限数量
+ */
+function getModuleCount(module) {
+  let count = module.menus.length + module.actions.length
+  if (module.children) {
+    module.children.forEach(child => {
+      count += child.menus.length + child.actions.length
+    })
+  }
+  return count
+}
+
+/**
+ * 计算子模块权限数量
+ */
+function getChildCount(child) {
+  return child.menus.length + child.actions.length
+}
+
+// 权限模块定义
+const moduleConfig = [
+  { name: '员工管理', menuPrefix: 'menu:employee', actionPrefix: 'emp:' },
+  { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
+  { name: '统计管理', menuPrefix: 'menu:statistics', actionPrefix: null },
+  {
+    name: '系统管理',
+    menuPrefix: 'menu:system',
+    actionPrefix: null,
+    children: [
+      { name: '字典管理', menuPrefix: 'menu:dictionary', actionPrefix: 'dict:' },
+      { name: '角色管理', menuPrefix: 'menu:role', actionPrefix: 'role:' },
+      { name: '权限管理', menuPrefix: 'menu:permission', actionPrefix: 'permission:' },
+      { name: '操作日志', menuPrefix: 'menu:log', actionPrefix: null },
+      { name: '数据库管理', menuPrefix: 'menu:database', actionPrefix: 'db:' }
+    ]
+  }
+]
+
+/**
+ * 获取单个模块的权限数据
+ */
+function getModuleData(config) {
+  // 获取菜单权限（包括子菜单）
+  const menus = permissions.value.filter(p =>
+    p.type === 'menu' && (
+      p.code === config.menuPrefix ||
+      p.code.startsWith(config.menuPrefix + ':')
+    )
+  )
+
+  // 获取操作权限
+  let actions = []
+  if (config.actionPrefix) {
+    actions = permissions.value.filter(p => p.code.startsWith(config.actionPrefix))
+  }
+
+  return {
+    name: config.name,
+    menus,
+    actions,
+    children: config.children ? config.children.map(child => getModuleData(child)) : []
+  }
+}
+
+// 按模块分组的权限
+const permissionModules = computed(() => {
+  return moduleConfig.map(config => getModuleData(config))
+    .filter(module => module.menus.length > 0 || module.actions.length > 0 || module.children.length > 0)
+})
 
 /**
  * 加载所有角色
@@ -251,23 +308,89 @@ onMounted(async () => {
 .permission-content {
   padding: 0 16px 16px 16px;
 }
-.permission-section {
-  margin-bottom: 20px;
+.permission-collapse {
+  border: none;
 }
-.section-title {
+.permission-collapse :deep(.el-collapse-item__header) {
+  background: #f1f5f9;
+  border-radius: 6px;
+  padding: 10px 16px;
+  margin-bottom: 8px;
+  border: 1px solid #e2e8f0;
+  height: auto;
+  line-height: 1.5;
   font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
-  margin: 0 0 12px 0;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #e4e7ed;
 }
-.permission-section :deep(.el-checkbox-group) {
+.permission-collapse :deep(.el-collapse-item__header:hover) {
+  background: #e2e8f0;
+}
+.permission-collapse :deep(.el-collapse-item__wrap) {
+  border: none;
+}
+.permission-collapse :deep(.el-collapse-item__content) {
+  padding: 8px 0 4px 0;
+}
+.collapse-title {
+  font-weight: 600;
+  color: #1e293b;
+}
+.collapse-count {
+  font-size: 12px;
+  color: #64748b;
+  margin-left: 4px;
+}
+.permission-group {
+  margin-bottom: 8px;
+}
+.permission-group.inline {
+  margin-bottom: 4px;
+}
+.group-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+.permission-children {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.child-module {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  padding: 8px 10px;
+}
+.child-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.child-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+}
+.child-count {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+.child-content {
+  padding-top: 4px;
+}
+.permission-collapse :deep(.el-checkbox-group) {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px;
 }
-.permission-section :deep(.el-checkbox) {
+.permission-collapse :deep(.el-checkbox) {
   margin-right: 0;
+}
+.permission-collapse :deep(.el-checkbox__label) {
+  font-size: 13px;
 }
 </style>

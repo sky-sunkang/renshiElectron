@@ -77,8 +77,8 @@
             </el-table-column>
             <el-table-column label="操作" width="120" align="center" fixed="right">
               <template #default="scope">
-                <el-button link type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
-                <el-button link type="danger" size="small" @click="deleteRow(scope.row)">删除</el-button>
+                <el-button v-if="permStore.hasPermission('db:edit')" link type="primary" size="small" @click="openEditDialog(scope.row)">编辑</el-button>
+                <el-button v-if="permStore.hasPermission('db:delete')" link type="danger" size="small" @click="deleteRow(scope.row)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -152,6 +152,9 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Grid } from '@element-plus/icons-vue'
+import { usePermissionStore } from '../stores/permission.js'
+
+const permStore = usePermissionStore()
 
 const tables = ref([])
 const currentTable = ref('')

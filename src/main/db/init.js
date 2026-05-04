@@ -678,7 +678,12 @@ function initPermissionSeedData() {
     { code: 'role:delete', name: '删除角色', type: 'button', description: '删除角色按钮' },
     { code: 'role:assignUser', name: '分配用户', type: 'button', description: '为用户分配角色按钮' },
     // 权限管理按钮权限
-    { code: 'permission:assign', name: '分配权限', type: 'button', description: '分配角色权限按钮' }
+    { code: 'permission:assign', name: '分配权限', type: 'button', description: '分配角色权限按钮' },
+    // 数据库管理按钮权限
+    { code: 'db:query', name: '执行SQL', type: 'button', description: '执行SQL查询按钮' },
+    { code: 'db:export', name: '导出数据', type: 'button', description: '导出数据库数据按钮' },
+    { code: 'db:edit', name: '编辑数据', type: 'button', description: '编辑表数据按钮' },
+    { code: 'db:delete', name: '删除数据', type: 'button', description: '删除表数据按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
