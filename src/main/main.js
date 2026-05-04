@@ -1,7 +1,17 @@
+/**
+ * Electron 主进程入口
+ * 负责窗口管理、IPC 通信注册、数据库初始化
+ */
+
 const { app, BrowserWindow, ipcMain, screen } = require('electron')
 const path = require('path')
 const db = require('./db')
 
+/**
+ * 创建应用主窗口
+ * 窗口大小为屏幕工作区的 80%，无边框（自定义标题栏）
+ * @returns {BrowserWindow} 创建的窗口实例
+ */
 const createWindow = () => {
   const preloadPath = app.isPackaged
     ? path.join(__dirname, '../preload/preload.js')

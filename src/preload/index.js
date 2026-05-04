@@ -1,5 +1,15 @@
+/**
+ * 预加载脚本
+ * 通过 contextBridge 安全地暴露 IPC 接口给渲染进程
+ * 所有通信通过 window.electronAPI 访问
+ */
+
 const { contextBridge, ipcRenderer } = require('electron')
 
+/**
+ * 暴露安全的 Electron API 给渲染进程
+ * 包含平台信息、窗口控制、业务模块 IPC 调用
+ */
 contextBridge.exposeInMainWorld('electronAPI', {
   platform: process.platform,
   window: {

@@ -130,7 +130,10 @@ const permStore = usePermissionStore()
 const authStore = useAuthStore()
 const { list: deptList, treeData } = storeToRefs(deptStore)
 
-/** 获取当前操作人信息 */
+/**
+ * 获取当前操作人信息
+ * @returns {Object|null} 操作人信息 { id, name } 或 null
+ */
 function getOperator() {
   const user = authStore.currentUser
   return user ? { id: user.id, name: user.name } : null
@@ -151,6 +154,9 @@ const formRef = ref()
 const form = reactive({ id: null, name: '', description: '', parent_id: 0 })
 const rules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
 
+/**
+ * 加载部门列表和员工数据
+ */
 async function load() {
   loading.value = true
   await deptStore.loadAll()
@@ -190,6 +196,10 @@ const pagedDepartments = computed(() => {
   return childDepartments.value.slice(start, start + pageSize.value)
 })
 
+/**
+ * 处理部门树节点点击事件
+ * @param {Object} data - 点击的部门数据
+ */
 function handleNodeClick(data) {
   currentDept.value = data
   page.value = 1 // 切换部门时重置页码
@@ -204,11 +214,22 @@ watch(childMode, () => {
   page.value = 1
 })
 
+/**
+ * 过滤部门树节点
+ * @param {string} value - 搜索关键词
+ * @param {Object} data - 部门节点数据
+ * @returns {boolean} 是否匹配
+ */
 function filterNode(value, data) {
   if (!value) return true
   return data.name && data.name.includes(value)
 }
 
+/**
+ * 构建部门树结构
+ * @param {Array} items - 部门列表
+ * @returns {Array} 树形结构的部门数组
+ */
 function buildTree(items) {
   const map = {}
   items.forEach(item => {
@@ -237,6 +258,10 @@ const parentOptionsTree = computed(() => {
   return buildTree(deptList.value.filter(d => !excludeIds.has(d.id)))
 })
 
+/**
+ * 打开部门编辑/新增弹窗
+ * @param {Object} [row] - 部门数据，不传则为新增模式
+ */
 function openDialog(row) {
   if (row) {
     form.id = row.id
@@ -252,6 +277,9 @@ function openDialog(row) {
   dialogVisible.value = true
 }
 
+/**
+ * 保存部门信息（新增或更新）
+ */
 async function save() {
   await formRef.value.validate()
   const pid = form.parent_id === '' ? 0 : (form.parent_id || 0)
@@ -267,6 +295,10 @@ async function save() {
   await load()
 }
 
+/**
+ * 删除部门
+ * @param {Object} row - 部门数据
+ */
 async function remove(row) {
   const children = await window.electronAPI.dept.getChildren(row.id)
   if (children && children.length > 0) {

@@ -14,6 +14,9 @@ let db
 
 /**
  * 获取数据库文件路径
+ * 开发模式：项目根目录下的 app.db
+ * 打包后：用户数据目录下的 app.db
+ * @returns {string} 数据库文件路径
  */
 function getDbPath() {
   if (!dbPath) {

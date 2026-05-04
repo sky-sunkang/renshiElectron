@@ -39,6 +39,10 @@ const props = defineProps({
 
 const permStore = usePermissionStore()
 
+/**
+ * 计算当前用户是否拥有所需权限
+ * @returns {boolean} 是否有权限访问
+ */
 const hasAuth = computed(() => {
   // 超级管理员直接通过
   if (permStore.isSuperAdmin) return true

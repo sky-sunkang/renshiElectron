@@ -163,11 +163,17 @@ const includeChildren = ref(false)
 const dragIndex = ref(null)
 
 /**
- * 获取部门及其所有子部门的ID
+ * 递归获取部门及其所有子部门的ID列表
+ * @param {Object|null} dept - 部门节点对象
+ * @returns {number[]} 部门ID数组
  */
 function getDeptAndChildrenIds(dept) {
   if (!dept) return []
   const ids = [dept.id]
+  /**
+   * 递归收集子部门ID
+   * @param {Object} node - 部门节点
+   */
   function collectChildren(node) {
     if (node.children && node.children.length > 0) {
       node.children.forEach(child => {
@@ -180,7 +186,10 @@ function getDeptAndChildrenIds(dept) {
   return ids
 }
 
-// 过滤后的员工列表（排除指定ID，保留已选人员显示选中状态）
+/**
+ * 根据部门筛选和搜索关键字过滤员工列表
+ * @returns {Object[]} 过滤后的员工列表
+ */
 const filteredEmployees = computed(() => {
   let list = empStore.list.filter(emp => {
     // 排除指定ID
@@ -211,14 +220,17 @@ const filteredEmployees = computed(() => {
 })
 
 /**
- * 判断是否已在已选列表中
+ * 判断指定员工是否已在已选列表中
+ * @param {Object} emp - 员工对象
+ * @returns {boolean} 是否已选中
  */
 function isInSelectedList(emp) {
   return selectedList.value.some(s => s.id === emp.id)
 }
 
 /**
- * 是否全选（当前过滤列表中所有人员都已选中）
+ * 计算当前过滤列表是否全部选中
+ * @returns {boolean} 是否全选
  */
 const isAllSelected = computed(() => {
   if (filteredEmployees.value.length === 0) return false
@@ -226,7 +238,8 @@ const isAllSelected = computed(() => {
 })
 
 /**
- * 是否部分选中（有选中但未全选）
+ * 计算当前过滤列表是否部分选中（有选中但未全选）
+ * @returns {boolean} 是否部分选中
  */
 const isPartialSelected = computed(() => {
   if (filteredEmployees.value.length === 0) return false
@@ -236,6 +249,7 @@ const isPartialSelected = computed(() => {
 
 /**
  * 全选/取消全选当前过滤列表
+ * @param {boolean} checked - 是否选中
  */
 function toggleSelectAll(checked) {
   if (checked) {
@@ -253,7 +267,8 @@ function toggleSelectAll(checked) {
 }
 
 /**
- * 切换选中状态（直接添加/移除）
+ * 切换员工选中状态（直接添加/移除）
+ * @param {Object} emp - 员工对象
  */
 function toggleSelect(emp) {
   console.log('[EmployeeSelector] toggleSelect:', emp.name, emp.id)
@@ -270,14 +285,17 @@ function toggleSelect(emp) {
 }
 
 /**
- * 搜索按钮点击（触发重新计算 filteredEmployees）
+ * 搜索按钮点击处理
+ * 注：搜索逻辑已通过 computed 自动处理，此处仅用于触发交互反馈
  */
 function handleSearch() {
   // 搜索逻辑已通过 computed 自动处理，此处仅用于触发交互反馈
 }
 
 /**
- * 处理拖拽开始
+ * 处理拖拽开始事件
+ * @param {DragEvent} event - 拖拽事件对象
+ * @param {number} index - 被拖拽项在列表中的索引
  */
 function handleDragStart(event, index) {
   dragIndex.value = index
@@ -285,7 +303,9 @@ function handleDragStart(event, index) {
 }
 
 /**
- * 处理拖拽放置
+ * 处理拖拽放置事件
+ * @param {DragEvent} event - 拖拽事件对象
+ * @param {number} dropIndex - 放置位置的索引
  */
 function handleDrop(event, dropIndex) {
   event.preventDefault()
@@ -300,14 +320,16 @@ function handleDrop(event, dropIndex) {
 }
 
 /**
- * 处理部门点击
+ * 处理部门树节点点击
+ * @param {Object} data - 被点击的部门节点数据
  */
 function handleNodeClick(data) {
   currentDept.value = data
 }
 
 /**
- * 从已选移除
+ * 从已选列表中移除指定员工
+ * @param {Object} row - 要移除的员工对象
  */
 function removeSelected(row) {
   const index = selectedList.value.findIndex(item => item.id === row.id)
@@ -317,14 +339,14 @@ function removeSelected(row) {
 }
 
 /**
- * 清空已选
+ * 清空已选人员列表
  */
 function clearSelected() {
   selectedList.value = []
 }
 
 /**
- * 关闭弹窗
+ * 关闭弹窗并重置状态
  */
 function handleClose() {
   visible.value = false
@@ -334,14 +356,16 @@ function handleClose() {
 }
 
 /**
- * 确认选择
+ * 确认选择，将已选人员列表通过事件返回给父组件
  */
 function handleConfirm() {
   emit('confirm', selectedList.value)
   handleClose()
 }
 
-// 加载数据
+/**
+ * 组件挂载时加载部门和员工数据，并默认选中第一个部门
+ */
 onMounted(async () => {
   await deptStore.loadAll()
   await empStore.loadAll()
@@ -354,7 +378,9 @@ onMounted(async () => {
   }
 })
 
-// 监听visible变化，打开时重置并加载数据
+/**
+ * 监听弹窗显示状态，打开时初始化已选列表并加载数据
+ */
 watch(visible, async (val) => {
   if (val) {
     // 根据 selectedIds 初始化已选列表

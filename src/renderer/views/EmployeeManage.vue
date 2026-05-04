@@ -226,7 +226,10 @@ const { gender: genderDict } = storeToRefs(dictStore)
 /** 职位字典选项 */
 const positionOptions = computed(() => dictStore.getOptions('position'))
 
-/** 获取当前操作人信息 */
+/**
+ * 获取当前操作人信息
+ * @returns {Object|null} 操作人信息 { id, name } 或 null
+ */
 function getOperator() {
   const user = authStore.currentUser
   return user ? { id: user.id, name: user.name } : null
@@ -250,6 +253,11 @@ const rules = {
   department_id: [{ required: true, message: '请选择部门', trigger: 'change' }]
 }
 
+/**
+ * 递归获取部门及其所有子部门的ID列表
+ * @param {number} deptId - 部门ID
+ * @returns {number[]} 部门ID数组
+ */
 function getAllChildDeptIds(deptId) {
   const ids = [deptId]
   function collect(pid) {
@@ -263,6 +271,9 @@ function getAllChildDeptIds(deptId) {
   return ids
 }
 
+/**
+ * 加载员工列表数据
+ */
 async function load() {
   await empStore.loadAll()
 }
@@ -286,16 +297,27 @@ const pagedList = computed(() => {
   return filteredList.value.slice(start, start + pageSize.value)
 })
 
+/**
+ * 处理部门树节点点击事件
+ * @param {Object} data - 点击的部门数据
+ */
 function handleNodeClick(data) {
   currentDept.value = data
 }
 
+/**
+ * 重置搜索条件
+ */
 function reset() {
   search.name = ''
   search.mode = 'direct'
   page.value = 1
 }
 
+/**
+ * 打开员工编辑/新增弹窗
+ * @param {Object} [row] - 员工数据，不传则为新增模式
+ */
 function openDialog(row) {
   if (row) {
     Object.assign(form, row)
@@ -335,6 +357,9 @@ async function handleAvatarChange(uploadFile) {
   reader.readAsDataURL(file)
 }
 
+/**
+ * 保存员工信息（新增或更新）
+ */
 async function save() {
   try {
     await formRef.value.validate()
@@ -370,6 +395,10 @@ async function save() {
   }
 }
 
+/**
+ * 删除单个员工
+ * @param {number} id - 员工ID
+ */
 async function remove(id) {
   await ElMessageBox.confirm('确定删除该员工吗？', '提示', { type: 'warning' })
   await window.electronAPI.emp.delete(id, getOperator())
@@ -377,10 +406,17 @@ async function remove(id) {
   await load()
 }
 
+/**
+ * 处理表格选择变化事件
+ * @param {Array} val - 选中的行数据数组
+ */
 function handleSelectionChange(val) {
   selected.value = val
 }
 
+/**
+ * 批量删除选中的员工
+ */
 async function batchDelete() {
   await ElMessageBox.confirm(`确定删除选中的 ${selected.value.length} 名员工吗？`, '提示', { type: 'warning' })
   const operator = getOperator()
@@ -399,6 +435,9 @@ function handleAvatarError(row) {
   // 头像加载失败时不做任何处理，el-avatar会显示默认文字
 }
 
+/**
+ * 导出员工数据为Excel文件
+ */
 function exportData() {
   // 准备Excel数据
   const data = filteredList.value.map(e => ({

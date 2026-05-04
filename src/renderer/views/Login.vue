@@ -147,6 +147,10 @@ function refreshCaptcha() {
   drawCaptcha()
 }
 
+/**
+ * 处理登录操作
+ * 验证表单、校验验证码、调用登录接口
+ */
 async function handleLogin() {
   try {
     await formRef.value.validate()
