@@ -651,6 +651,7 @@ function initPermissionSeedData() {
     { code: 'menu:system', name: '系统管理菜单', type: 'menu', description: '访问系统管理页面' },
     { code: 'menu:dictionary', name: '字典管理菜单', type: 'menu', description: '访问字典管理页面' },
     { code: 'menu:role', name: '角色管理菜单', type: 'menu', description: '访问角色管理页面' },
+    { code: 'menu:permission', name: '权限管理菜单', type: 'menu', description: '访问权限管理页面' },
     { code: 'menu:log', name: '操作日志菜单', type: 'menu', description: '访问操作日志页面' },
     { code: 'menu:database', name: '数据库管理菜单', type: 'menu', description: '访问数据库管理页面' },
     // 员工管理按钮权限
@@ -675,8 +676,9 @@ function initPermissionSeedData() {
     { code: 'role:add', name: '新增角色', type: 'button', description: '新增角色按钮' },
     { code: 'role:edit', name: '编辑角色', type: 'button', description: '编辑角色按钮' },
     { code: 'role:delete', name: '删除角色', type: 'button', description: '删除角色按钮' },
-    { code: 'role:assign', name: '分配权限', type: 'button', description: '分配角色权限按钮' },
-    { code: 'role:assignUser', name: '分配用户', type: 'button', description: '为用户分配角色按钮' }
+    { code: 'role:assignUser', name: '分配用户', type: 'button', description: '为用户分配角色按钮' },
+    // 权限管理按钮权限
+    { code: 'permission:assign', name: '分配权限', type: 'button', description: '分配角色权限按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）

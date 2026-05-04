@@ -33,7 +33,7 @@
       <div class="panel-header">
         <h3>{{ currentRole ? currentRole.name + ' - 权限配置' : '权限配置' }}</h3>
         <el-button
-          v-if="permStore.hasPermission('role:assign') && currentRole"
+          v-if="permStore.hasPermission('permission:assign') && currentRole"
           type="primary"
           size="small"
           :disabled="currentRole?.is_system"
@@ -102,6 +102,16 @@
               </el-checkbox>
             </el-checkbox-group>
           </div>
+
+          <!-- 权限管理权限 -->
+          <div class="permission-section">
+            <h4 class="section-title">权限管理权限</h4>
+            <el-checkbox-group v-model="selectedPermissions" :disabled="currentRole.is_system">
+              <el-checkbox v-for="perm in permissionPermissions" :key="perm.code" :label="perm.code">
+                {{ perm.name }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
         </div>
       </el-scrollbar>
       <el-empty v-else description="请选择角色查看权限" />
@@ -136,6 +146,7 @@ const empPermissions = computed(() => permissions.value.filter((p) => p.code.sta
 const deptPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('dept:')))
 const dictPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('dict:')))
 const rolePermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('role:')))
+const permissionPermissions = computed(() => permissions.value.filter((p) => p.code.startsWith('permission:')))
 
 /**
  * 加载所有角色

@@ -61,7 +61,7 @@ const routes = [
       {
         path: '/role-permission',
         component: RolePermissionManage,
-        meta: { title: '权限管理', icon: Lock, permission: 'menu:role' }
+        meta: { title: '权限管理', icon: Lock, permission: 'menu:permission' }
       },
       {
         path: '/operation-log',
