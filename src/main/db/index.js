@@ -99,9 +99,10 @@ function getTableData(tableName, options = {}) {
  * @param {string} tableName - 表名
  * @param {number} id - 记录ID
  * @param {Object} data - 更新数据
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
  */
-function updateTableData(tableName, id, data) {
+function updateTableData(tableName, id, data, operator) {
   const db = core.getDb()
   const columns = Object.keys(data).filter(k => k !== 'id')
   const setClause = columns.map(k => `${k} = ?`).join(', ')
@@ -111,6 +112,16 @@ function updateTableData(tableName, id, data) {
   stmt.run([...values, id])
   stmt.free()
   core.save()
+  // 记录操作日志
+  log.addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '数据库管理',
+    action: '编辑',
+    targetType: tableName,
+    targetId: id,
+    detail: JSON.stringify({ fields: columns })
+  })
   return true
 }
 
@@ -118,23 +129,35 @@ function updateTableData(tableName, id, data) {
  * 删除表数据
  * @param {string} tableName - 表名
  * @param {number} id - 记录ID
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 删除成功返回true
  */
-function deleteTableData(tableName, id) {
+function deleteTableData(tableName, id, operator) {
   const db = core.getDb()
   const stmt = db.prepare(`DELETE FROM ${tableName} WHERE id = ?`)
   stmt.run([id])
   stmt.free()
   core.save()
+  // 记录操作日志
+  log.addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '数据库管理',
+    action: '删除',
+    targetType: tableName,
+    targetId: id,
+    detail: JSON.stringify({ id })
+  })
   return true
 }
 
 /**
  * 执行SQL语句
  * @param {string} sql - SQL语句
+ * @param {Object} operator - 操作人信息 { id, name }
  * @returns {Array|Object} 查询结果或执行结果
  */
-function executeSql(sql) {
+function executeSql(sql, operator) {
   const db = core.getDb()
   const sqlUpper = sql.trim().toUpperCase()
 
@@ -149,6 +172,15 @@ function executeSql(sql) {
   } else {
     db.run(sql)
     core.save()
+    // 记录操作日志
+    log.addLog({
+      userId: operator?.id,
+      userName: operator?.name,
+      module: '数据库管理',
+      action: '执行SQL',
+      targetType: 'SQL',
+      detail: JSON.stringify({ sql: sql.substring(0, 500) })
+    })
     return { affected: db.getRowsModified() }
   }
 }

@@ -153,8 +153,16 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Grid } from '@element-plus/icons-vue'
 import { usePermissionStore } from '../stores/permission.js'
+import { useAuthStore } from '../stores/auth.js'
 
 const permStore = usePermissionStore()
+const authStore = useAuthStore()
+
+/** 获取当前操作人信息 */
+function getOperator() {
+  const user = authStore.currentUser
+  return user ? { id: user.id, name: user.name } : null
+}
 
 const tables = ref([])
 const currentTable = ref('')
@@ -301,7 +309,7 @@ async function saveEdit() {
   })
 
   try {
-    await window.electronAPI.db.updateTableData(currentTable.value, editingId.value, data)
+    await window.electronAPI.db.updateTableData(currentTable.value, editingId.value, data, getOperator())
     ElMessage.success('更新成功')
     editDialogVisible.value = false
     await loadData()
@@ -317,7 +325,7 @@ async function saveEdit() {
 async function deleteRow(row) {
   try {
     await ElMessageBox.confirm('确定删除该记录吗？此操作不可恢复！', '警告', { type: 'warning' })
-    await window.electronAPI.db.deleteTableData(currentTable.value, row.id)
+    await window.electronAPI.db.deleteTableData(currentTable.value, row.id, getOperator())
     ElMessage.success('删除成功')
     await loadData()
   } catch (e) {
@@ -345,7 +353,7 @@ async function executeSql() {
     return
   }
   try {
-    const result = await window.electronAPI.db.executeSql(sqlText.value)
+    const result = await window.electronAPI.db.executeSql(sqlText.value, getOperator())
     sqlResult.value = result
     ElMessage.success('执行成功')
     // 如果是修改操作，刷新数据
