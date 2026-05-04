@@ -1,29 +1,31 @@
 <template>
   <el-config-provider :locale="zhCn">
-  <div class="app">
-    <!-- 自定义标题栏 -->
-    <div class="title-bar">
-      <div class="title-bar-drag">
-        <span class="app-title">人事管理系统</span>
+    <div class="app">
+      <!-- 自定义标题栏 -->
+      <div class="title-bar">
+        <div class="title-bar-drag">
+          <span class="app-title">人事管理系统</span>
+        </div>
+        <div class="window-controls">
+          <el-button text class="win-btn" @click="minimizeWindow">
+            <el-icon><Minus /></el-icon>
+          </el-button>
+          <el-button text class="win-btn" @click="maximizeWindow">
+            <el-icon><FullScreen v-if="!isMaximized" /><Crop v-else /></el-icon>
+          </el-button>
+          <el-button text class="win-btn close-btn" @click="closeWindow">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
       </div>
-      <div class="window-controls">
-        <el-button text class="win-btn" @click="minimizeWindow">
-          <el-icon><Minus /></el-icon>
-        </el-button>
-        <el-button text class="win-btn" @click="maximizeWindow">
-          <el-icon><FullScreen v-if="!isMaximized" /><Crop v-else /></el-icon>
-        </el-button>
-        <el-button text class="win-btn close-btn" @click="closeWindow">
-          <el-icon><Close /></el-icon>
-        </el-button>
+
+      <!-- 登录页 -->
+      <div v-if="!isLoggedIn" class="login-wrapper">
+        <router-view />
       </div>
-    </div>
 
-    <!-- 未登录：显示登录页 -->
-    <Login v-if="!isLoggedIn" @login="handleLogin" />
-
-    <!-- 已登录：显示主布局 -->
-    <div v-else class="main-layout">
+      <!-- 主布局：已登录状态 -->
+      <div v-else class="main-layout">
       <!-- 左侧侧边栏 -->
       <div class="sidebar">
         <div class="sidebar-header">
@@ -143,7 +145,7 @@
       <el-button type="primary" @click="saveProfileAvatar">保存</el-button>
     </template>
   </el-dialog>
-  </el-config-provider>
+</el-config-provider>
 </template>
 
 <script setup>
@@ -153,7 +155,6 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { Minus, FullScreen, Crop, Close, UserFilled } from '@element-plus/icons-vue'
-import Login from './views/Login.vue'
 import { useAuthStore } from './stores/auth.js'
 import { usePermissionStore } from './stores/permission.js'
 import routerConfig from './router/index.js'
@@ -189,8 +190,8 @@ const menuItems = computed(() => {
   console.log('[App] menuItems computed, isSuperAdmin:', admin, 'permissions:', perms)
 
   return routerConfig.options.routes.filter(r => {
-    // 排除重定向路由
-    if (!r.meta || !r.meta.title) return false
+    // 排除重定向路由和不需要登录的路由（如登录页）
+    if (!r.meta || !r.meta.title || r.meta.noAuth) return false
     // 检查权限 - 超级管理员直接显示所有菜单
     if (r.meta.permission) {
       return admin || perms.includes(r.meta.permission)
@@ -206,15 +207,6 @@ const pageTitle = computed(() => {
 })
 
 const isMaximized = ref(false)
-
-function handleLogin(user) {
-  authStore.login(user)
-  // 跳转到有权限的第一个菜单页面
-  const firstMenu = menuItems.value[0]
-  if (firstMenu) {
-    router.push(firstMenu.path)
-  }
-}
 
 function handleLogout() {
   authStore.logout()
@@ -366,6 +358,12 @@ onMounted(async () => {
 }
 .close-btn:hover {
   background: #e81123;
+}
+
+/* 登录页包装器 */
+.login-wrapper {
+  flex: 1;
+  overflow: hidden;
 }
 
 /* 主布局 */

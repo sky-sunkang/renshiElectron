@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import Login from '../views/Login.vue'
 import EmployeeManage from '../views/EmployeeManage.vue'
 import DepartmentManage from '../views/DepartmentManage.vue'
 import StatisticsPage from '../views/StatisticsPage.vue'
@@ -10,6 +11,11 @@ import DatabaseManage from '../views/DatabaseManage.vue'
 import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid } from '@element-plus/icons-vue'
 
 const routes = [
+  {
+    path: '/login',
+    component: Login,
+    meta: { title: '登录', noAuth: true }
+  },
   { path: '/', redirect: '/employee' },
   {
     path: '/employee',
@@ -56,6 +62,34 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
+})
+
+/**
+ * 路由守卫：检查登录状态
+ */
+router.beforeEach((to, _from, next) => {
+  const userStr = localStorage.getItem('currentUser')
+  console.log('[Router Guard] to:', to.path, 'userStr:', !!userStr)
+
+  // 不需要登录的页面直接放行
+  if (to.meta.noAuth) {
+    // 已登录用户访问登录页，跳转到首页
+    if (userStr && to.path === '/login') {
+      next('/employee')
+      return
+    }
+    next()
+    return
+  }
+
+  // 需要登录的页面，检查登录状态
+  if (!userStr) {
+    console.log('[Router Guard] redirect to login')
+    next('/login')
+    return
+  }
+
+  next()
 })
 
 export default router

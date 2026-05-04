@@ -57,10 +57,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { UserFilled, User, Lock, Key } from '@element-plus/icons-vue'
+import { useAuthStore } from '../stores/auth.js'
 
-const emit = defineEmits(['login'])
+const router = useRouter()
+const authStore = useAuthStore()
 
 const formRef = ref()
 const loading = ref(false)
@@ -164,7 +167,8 @@ async function handleLogin() {
     loading.value = false
     if (user) {
       ElMessage.success('登录成功')
-      emit('login', user)
+      authStore.login(user)
+      router.push('/')
     } else {
       ElMessage.error('账号或密码错误')
       refreshCaptcha()
