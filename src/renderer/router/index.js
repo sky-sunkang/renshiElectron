@@ -5,6 +5,7 @@ import EmployeeManage from '../views/EmployeeManage.vue'
 import DepartmentManage from '../views/DepartmentManage.vue'
 import StatisticsPage from '../views/StatisticsPage.vue'
 import LogStatistics from '../views/LogStatistics.vue'
+import AttendanceStatistics from '../views/AttendanceStatistics.vue'
 import DictionaryManage from '../views/DictionaryManage.vue'
 import RolePermissionManage from '../views/RolePermissionManage.vue'
 import RoleUserManage from '../views/RoleUserManage.vue'
@@ -17,7 +18,7 @@ import AttendanceManage from '../views/AttendanceManage.vue'
 import RecruitmentManage from '../views/RecruitmentManage.vue'
 import PerformanceManage from '../views/PerformanceManage.vue'
 import SalaryManage from '../views/SalaryManage.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase, Money } from '@element-plus/icons-vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase, Money, Calendar } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -79,6 +80,11 @@ const routes = [
         path: '/statistics/log',
         component: LogStatistics,
         meta: { title: '操作统计', icon: Histogram, permission: 'menu:statistics:log' }
+      },
+      {
+        path: '/statistics/attendance',
+        component: AttendanceStatistics,
+        meta: { title: '考勤统计', icon: Calendar, permission: 'menu:statistics:attendance' }
       }
     ]
   },

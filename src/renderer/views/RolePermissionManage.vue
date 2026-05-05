@@ -150,7 +150,8 @@ const moduleConfig = [
     actionPrefix: null,
     children: [
       { name: '员工统计', menuPrefix: 'menu:statistics:employee', actionPrefix: null },
-      { name: '操作统计', menuPrefix: 'menu:statistics:log', actionPrefix: null }
+      { name: '操作统计', menuPrefix: 'menu:statistics:log', actionPrefix: null },
+      { name: '考勤统计', menuPrefix: 'menu:statistics:attendance', actionPrefix: null }
     ]
   },
   {
