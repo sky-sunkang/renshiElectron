@@ -10,7 +10,7 @@
         <el-input v-model="searchEmployee" placeholder="员工姓名/账号" clearable @keyup.enter="loadList" />
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="searchStatus" placeholder="全部" clearable>
+        <el-select v-model="searchStatus" placeholder="全部" clearable style="width: 120px">
           <el-option v-for="item in contractStatuses" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
@@ -129,7 +129,7 @@ const loading = ref(false)
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(10)
 const searchEmployee = ref('')
 const searchStatus = ref('')
 

@@ -17,6 +17,7 @@ const contract = require('./contract')
 const attendance = require('./attendance')
 const recruitment = require('./recruitment')
 const performance = require('./performance')
+const salary = require('./salary')
 
 /**
  * 初始化数据库
@@ -297,6 +298,20 @@ module.exports = {
   // 绩效模块 - 评分明细
   getAssessmentDetails: performance.getAssessmentDetails,
   saveAssessmentDetails: performance.saveAssessmentDetails,
+  // 薪资模块 - 工资条管理
+  getSalarySheets: salary.getSalarySheets,
+  getSalarySheetById: salary.getSalarySheetById,
+  addSalarySheet: salary.addSalarySheet,
+  updateSalarySheet: salary.updateSalarySheet,
+  deleteSalarySheet: salary.deleteSalarySheet,
+  batchGenerateSalarySheets: salary.batchGenerateSalarySheets,
+  // 薪资模块 - 调薪记录
+  getSalaryAdjustments: salary.getSalaryAdjustments,
+  getSalaryAdjustmentById: salary.getSalaryAdjustmentById,
+  addSalaryAdjustment: salary.addSalaryAdjustment,
+  deleteSalaryAdjustment: salary.deleteSalaryAdjustment,
+  // 薪资模块 - 薪资统计
+  getSalaryStatistics: salary.getSalaryStatistics,
   // 数据库管理
   getTables,
   getTableSchema,

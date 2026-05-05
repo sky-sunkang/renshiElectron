@@ -214,6 +214,23 @@ app.whenReady().then(() => {
   ipcMain.handle('assessment:getDetails', (_, assessmentId) => db.getAssessmentDetails(assessmentId))
   ipcMain.handle('assessment:saveDetails', (_, assessmentId, details, operator) => db.saveAssessmentDetails(assessmentId, details, operator))
 
+  // Salary - Salary Sheets
+  ipcMain.handle('salarySheet:getAll', (_, options) => db.getSalarySheets(options))
+  ipcMain.handle('salarySheet:getById', (_, id) => db.getSalarySheetById(id))
+  ipcMain.handle('salarySheet:add', (_, data, operator) => db.addSalarySheet(data, operator))
+  ipcMain.handle('salarySheet:update', (_, id, data, operator) => db.updateSalarySheet(id, data, operator))
+  ipcMain.handle('salarySheet:delete', (_, id, operator) => db.deleteSalarySheet(id, operator))
+  ipcMain.handle('salarySheet:batchGenerate', (_, month, employeeIds, operator) => db.batchGenerateSalarySheets(month, employeeIds, operator))
+
+  // Salary - Adjustments
+  ipcMain.handle('salaryAdjustment:getAll', (_, options) => db.getSalaryAdjustments(options))
+  ipcMain.handle('salaryAdjustment:getById', (_, id) => db.getSalaryAdjustmentById(id))
+  ipcMain.handle('salaryAdjustment:add', (_, data, operator) => db.addSalaryAdjustment(data, operator))
+  ipcMain.handle('salaryAdjustment:delete', (_, id, operator) => db.deleteSalaryAdjustment(id, operator))
+
+  // Salary - Statistics
+  ipcMain.handle('salaryStatistics:get', (_, options) => db.getSalaryStatistics(options))
+
   createWindow()
 
   app.on('activate', () => {

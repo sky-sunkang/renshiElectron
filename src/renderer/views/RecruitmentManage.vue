@@ -11,7 +11,7 @@
             <el-input v-model="positionSearch" placeholder="岗位名称/部门" clearable @keyup.enter="loadPositions" />
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="positionStatus" placeholder="全部" clearable>
+            <el-select v-model="positionStatus" placeholder="全部" clearable style="width: 120px">
               <el-option v-for="item in positionStatuses" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -52,7 +52,7 @@
             <el-input v-model="candidateSearch" placeholder="姓名/电话/邮箱" clearable @keyup.enter="loadCandidates" />
           </el-form-item>
           <el-form-item label="状态">
-            <el-select v-model="candidateStatus" placeholder="全部" clearable>
+            <el-select v-model="candidateStatus" placeholder="全部" clearable style="width: 120px">
               <el-option v-for="item in candidateStatuses" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -87,7 +87,7 @@
       <el-tab-pane label="面试安排" name="interview">
         <el-form :inline="true" class="search-form">
           <el-form-item label="状态">
-            <el-select v-model="interviewStatus" placeholder="全部" clearable>
+            <el-select v-model="interviewStatus" placeholder="全部" clearable style="width: 120px">
               <el-option v-for="item in interviewStatuses" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -302,7 +302,7 @@ const positionLoading = ref(false)
 const positions = ref([])
 const positionTotal = ref(0)
 const positionPage = ref(1)
-const positionPageSize = ref(20)
+const positionPageSize = ref(10)
 const positionSearch = ref('')
 const positionStatus = ref('')
 const positionDialogVisible = ref(false)
@@ -334,7 +334,7 @@ const candidateLoading = ref(false)
 const candidates = ref([])
 const candidateTotal = ref(0)
 const candidatePage = ref(1)
-const candidatePageSize = ref(20)
+const candidatePageSize = ref(10)
 const candidateSearch = ref('')
 const candidateStatus = ref('')
 const candidateDialogVisible = ref(false)
@@ -351,7 +351,7 @@ const interviewLoading = ref(false)
 const interviews = ref([])
 const interviewTotal = ref(0)
 const interviewPage = ref(1)
-const interviewPageSize = ref(20)
+const interviewPageSize = ref(10)
 const interviewStatus = ref('')
 const interviewDialogVisible = ref(false)
 const interviewIsEdit = ref(false)

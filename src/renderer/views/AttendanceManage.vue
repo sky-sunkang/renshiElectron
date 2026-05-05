@@ -11,7 +11,7 @@
         <el-input v-model="searchEmployee" placeholder="员工姓名/账号" clearable @keyup.enter="loadList" />
       </el-form-item>
       <el-form-item label="类型">
-        <el-select v-model="searchType" placeholder="全部" clearable>
+        <el-select v-model="searchType" placeholder="全部" clearable style="width: 120px">
           <el-option v-for="item in attendanceTypes" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
       </el-form-item>
@@ -136,7 +136,7 @@ const loading = ref(false)
 const list = ref([])
 const total = ref(0)
 const page = ref(1)
-const pageSize = ref(20)
+const pageSize = ref(10)
 const searchEmployee = ref('')
 const searchType = ref('')
 const dateRange = ref(null)

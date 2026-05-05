@@ -28,7 +28,9 @@ const tableComments = {
   interviews: '面试表：存储面试安排记录',
   performance_indicators: '考核指标表：存储绩效考核指标',
   assessments: '考核记录表：存储员工绩效考核记录',
-  assessment_details: '考核评分明细表：存储考核评分详情'
+  assessment_details: '考核评分明细表：存储考核评分详情',
+  salary_sheets: '工资条表：存储员工工资条信息',
+  salary_adjustments: '调薪记录表：存储员工调薪记录'
 }
 
 /**
@@ -274,6 +276,42 @@ const fieldComments = {
     assessment_id: '考核记录ID',
     indicator_id: '考核指标ID',
     score: '得分',
+    remark: '备注',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
+  },
+  salary_sheets: {
+    id: '主键，自增',
+    employee_id: '员工ID',
+    month: '月份（如：2024-01）',
+    base_salary: '基本工资',
+    overtime_pay: '加班费',
+    bonus: '奖金',
+    allowance: '补贴',
+    deduction: '扣款',
+    tax: '个税',
+    insurance: '社保公积金',
+    actual_salary: '实发工资',
+    status: '工资条状态（draft-草稿，published-已发布，paid-已发放）',
+    remark: '备注',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
+  },
+  salary_adjustments: {
+    id: '主键，自增',
+    employee_id: '员工ID',
+    type: '调薪类型（raise-涨薪，cut-降薪，regular-转正调薪，promotion-晋升调薪）',
+    before_salary: '调薪前薪资',
+    adjust_amount: '调整金额',
+    after_salary: '调薪后薪资',
+    effective_date: '生效日期（Unix时间戳）',
+    reason: '调薪原因',
     remark: '备注',
     is_deleted: '是否删除，0-未删除，1-已删除',
     created_by: '创建人ID',

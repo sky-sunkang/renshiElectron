@@ -145,4 +145,24 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getDetails: (assessmentId) => ipcRenderer.invoke('assessment:getDetails', assessmentId),
     saveDetails: (assessmentId, details, operator) => ipcRenderer.invoke('assessment:saveDetails', assessmentId, details, operator),
   },
+  // Salary - Salary Sheets
+  salarySheet: {
+    getAll: (options) => ipcRenderer.invoke('salarySheet:getAll', options),
+    getById: (id) => ipcRenderer.invoke('salarySheet:getById', id),
+    add: (data, operator) => ipcRenderer.invoke('salarySheet:add', data, operator),
+    update: (id, data, operator) => ipcRenderer.invoke('salarySheet:update', id, data, operator),
+    delete: (id, operator) => ipcRenderer.invoke('salarySheet:delete', id, operator),
+    batchGenerate: (month, employeeIds, operator) => ipcRenderer.invoke('salarySheet:batchGenerate', month, employeeIds, operator),
+  },
+  // Salary - Adjustments
+  salaryAdjustment: {
+    getAll: (options) => ipcRenderer.invoke('salaryAdjustment:getAll', options),
+    getById: (id) => ipcRenderer.invoke('salaryAdjustment:getById', id),
+    add: (data, operator) => ipcRenderer.invoke('salaryAdjustment:add', data, operator),
+    delete: (id, operator) => ipcRenderer.invoke('salaryAdjustment:delete', id, operator),
+  },
+  // Salary - Statistics
+  salaryStatistics: {
+    get: (options) => ipcRenderer.invoke('salaryStatistics:get', options),
+  },
 })

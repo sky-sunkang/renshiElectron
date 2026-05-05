@@ -12,6 +12,8 @@
       </el-avatar>
       <span class="user-name">{{ currentUser?.name || '管理员' }}</span>
       <el-divider direction="vertical" />
+      <el-button link type="primary" size="small" @click="handleRefresh">刷新</el-button>
+      <el-divider direction="vertical" />
       <el-button link type="primary" size="small" @click="$emit('openPassword')">修改密码</el-button>
       <el-divider direction="vertical" />
       <el-button link type="primary" size="small" @click="$emit('logout')">退出</el-button>
@@ -36,6 +38,13 @@ defineProps({
 })
 
 defineEmits(['openProfile', 'openPassword', 'logout'])
+
+/**
+ * 刷新应用
+ */
+function handleRefresh() {
+  window.location.reload()
+}
 
 /**
  * 当前页面的标题，根据路由匹配菜单获取

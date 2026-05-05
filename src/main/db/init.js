@@ -654,6 +654,45 @@ function initDictSeedData() {
     itemStmt.free()
     console.log('[DB] indicator_category dictionary seeded')
   }
+
+  // 初始化工资条状态字典
+  const salarySheetStatusCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'salary_sheet_status' AND is_deleted = 0")
+  salarySheetStatusCheckStmt.step()
+  const salarySheetStatusCount = Number(salarySheetStatusCheckStmt.getAsObject().c)
+  salarySheetStatusCheckStmt.free()
+
+  if (salarySheetStatusCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['salary_sheet_status', '工资条状态', '工资条状态选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['salary_sheet_status', '草稿', 'draft', 1])
+    itemStmt.run(['salary_sheet_status', '已发布', 'published', 2])
+    itemStmt.run(['salary_sheet_status', '已发放', 'paid', 3])
+    itemStmt.free()
+    console.log('[DB] salary_sheet_status dictionary seeded')
+  }
+
+  // 初始化调薪类型字典
+  const salaryAdjustTypeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'salary_adjust_type' AND is_deleted = 0")
+  salaryAdjustTypeCheckStmt.step()
+  const salaryAdjustTypeCount = Number(salaryAdjustTypeCheckStmt.getAsObject().c)
+  salaryAdjustTypeCheckStmt.free()
+
+  if (salaryAdjustTypeCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['salary_adjust_type', '调薪类型', '调薪类型选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['salary_adjust_type', '涨薪', 'raise', 1])
+    itemStmt.run(['salary_adjust_type', '降薪', 'cut', 2])
+    itemStmt.run(['salary_adjust_type', '转正调薪', 'regular', 3])
+    itemStmt.run(['salary_adjust_type', '晋升调薪', 'promotion', 4])
+    itemStmt.free()
+    console.log('[DB] salary_adjust_type dictionary seeded')
+  }
 }
 
 // ==================== 权限初始化 ====================
@@ -914,7 +953,17 @@ function initPermissionSeedData() {
     { code: 'assessment:add', name: '新增考核', type: 'button', description: '新增考核记录按钮' },
     { code: 'assessment:edit', name: '编辑考核', type: 'button', description: '编辑考核记录按钮' },
     { code: 'assessment:delete', name: '删除考核', type: 'button', description: '删除考核记录按钮' },
-    { code: 'assessment:score', name: '评分', type: 'button', description: '考核评分按钮' }
+    { code: 'assessment:score', name: '评分', type: 'button', description: '考核评分按钮' },
+    // 薪资管理菜单权限
+    { code: 'menu:salary', name: '薪资管理菜单', type: 'menu', description: '访问薪资管理页面' },
+    // 薪资管理按钮权限
+    { code: 'salary:add', name: '新增工资条', type: 'button', description: '新增工资条按钮' },
+    { code: 'salary:edit', name: '编辑工资条', type: 'button', description: '编辑工资条按钮' },
+    { code: 'salary:delete', name: '删除工资条', type: 'button', description: '删除工资条按钮' },
+    { code: 'salary:generate', name: '批量生成', type: 'button', description: '批量生成工资条按钮' },
+    { code: 'salary:export', name: '导出工资条', type: 'button', description: '导出工资条数据按钮' },
+    { code: 'adjustment:add', name: '新增调薪', type: 'button', description: '新增调薪记录按钮' },
+    { code: 'adjustment:delete', name: '删除调薪', type: 'button', description: '删除调薪记录按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
@@ -988,7 +1037,7 @@ function assignPermissionsToRoles() {
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:dictionary',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
     'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete',
@@ -1000,7 +1049,9 @@ function assignPermissionsToRoles() {
     'candidate:add', 'candidate:edit', 'candidate:delete',
     'interview:add', 'interview:edit', 'interview:delete',
     'indicator:add', 'indicator:edit', 'indicator:delete',
-    'assessment:add', 'assessment:edit', 'assessment:delete', 'assessment:score'
+    'assessment:add', 'assessment:edit', 'assessment:delete', 'assessment:score',
+    'salary:add', 'salary:edit', 'salary:delete', 'salary:generate', 'salary:export',
+    'adjustment:add', 'adjustment:delete'
   ]
   const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   adminPermissions.forEach(code => adminStmt.run([adminId, code]))
@@ -1009,7 +1060,7 @@ function assignPermissionsToRoles() {
   // 人事专员权限
   const hrPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:log',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
     'emp:add', 'emp:edit', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit',
     'contract:add', 'contract:edit', 'contract:export',
@@ -1020,7 +1071,9 @@ function assignPermissionsToRoles() {
     'candidate:add', 'candidate:edit',
     'interview:add', 'interview:edit',
     'indicator:add', 'indicator:edit',
-    'assessment:add', 'assessment:edit', 'assessment:score'
+    'assessment:add', 'assessment:edit', 'assessment:score',
+    'salary:add', 'salary:edit', 'salary:generate', 'salary:export',
+    'adjustment:add'
   ]
   const hrStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   hrPermissions.forEach(code => hrStmt.run([hrId, code]))
@@ -1434,6 +1487,59 @@ function initPerformanceTables() {
   console.log('[DB] performance tables initialized')
 }
 
+/**
+ * 初始化薪资管理表结构
+ */
+function initSalaryTables() {
+  const db = getDb()
+
+  // 创建工资条表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS salary_sheets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      month TEXT NOT NULL,
+      base_salary REAL DEFAULT 0,
+      overtime_pay REAL DEFAULT 0,
+      bonus REAL DEFAULT 0,
+      allowance REAL DEFAULT 0,
+      deduction REAL DEFAULT 0,
+      tax REAL DEFAULT 0,
+      insurance REAL DEFAULT 0,
+      actual_salary REAL DEFAULT 0,
+      status TEXT DEFAULT 'draft',
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  // 创建调薪记录表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS salary_adjustments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'raise',
+      before_salary REAL DEFAULT 0,
+      adjust_amount REAL DEFAULT 0,
+      after_salary REAL DEFAULT 0,
+      effective_date INTEGER,
+      reason TEXT,
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] salary tables initialized')
+}
+
 // ==================== 统一初始化入口 ====================
 
 /**
@@ -1450,6 +1556,7 @@ function initAllTables() {
   initAttendanceTables()
   initRecruitmentTables()
   initPerformanceTables()
+  initSalaryTables()
 }
 
 /**

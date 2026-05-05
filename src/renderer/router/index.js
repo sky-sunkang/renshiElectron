@@ -15,7 +15,8 @@ import ContractManage from '../views/ContractManage.vue'
 import AttendanceManage from '../views/AttendanceManage.vue'
 import RecruitmentManage from '../views/RecruitmentManage.vue'
 import PerformanceManage from '../views/PerformanceManage.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase } from '@element-plus/icons-vue'
+import SalaryManage from '../views/SalaryManage.vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase, Money } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -53,6 +54,11 @@ const routes = [
     path: '/performance',
     component: PerformanceManage,
     meta: { title: '绩效考核', icon: TrophyBase, permission: 'menu:performance' }
+  },
+  {
+    path: '/salary',
+    component: SalaryManage,
+    meta: { title: '薪资管理', icon: Money, permission: 'menu:salary' }
   },
   {
     path: '/statistics',

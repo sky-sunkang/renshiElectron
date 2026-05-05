@@ -8,7 +8,7 @@
         </div>
         <el-form :inline="true" class="search-form">
           <el-form-item label="类别">
-            <el-select v-model="indicatorCategory" placeholder="全部" clearable>
+            <el-select v-model="indicatorCategory" placeholder="全部" clearable style="width: 120px">
               <el-option v-for="item in indicatorCategories" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -209,7 +209,7 @@ const indicatorLoading = ref(false)
 const indicators = ref([])
 const indicatorTotal = ref(0)
 const indicatorPage = ref(1)
-const indicatorPageSize = ref(20)
+const indicatorPageSize = ref(10)
 const indicatorCategory = ref('')
 const indicatorDialogVisible = ref(false)
 const indicatorIsEdit = ref(false)
@@ -224,7 +224,7 @@ const assessmentLoading = ref(false)
 const assessments = ref([])
 const assessmentTotal = ref(0)
 const assessmentPage = ref(1)
-const assessmentPageSize = ref(20)
+const assessmentPageSize = ref(10)
 const assessmentSearch = ref('')
 const assessmentPeriod = ref('')
 const assessmentDialogVisible = ref(false)
