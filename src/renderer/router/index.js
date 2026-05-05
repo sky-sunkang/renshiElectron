@@ -9,7 +9,9 @@ import RolePermissionManage from '../views/RolePermissionManage.vue'
 import RoleUserManage from '../views/RoleUserManage.vue'
 import OperationLog from '../views/OperationLog.vue'
 import DatabaseManage from '../views/DatabaseManage.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram } from '@element-plus/icons-vue'
+import AnnouncementManage from '../views/AnnouncementManage.vue'
+import DataImportExport from '../views/DataImportExport.vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -48,6 +50,16 @@ const routes = [
     path: '/system',
     meta: { title: '系统管理', icon: Setting, permission: 'menu:system' },
     children: [
+      {
+        path: '/announcement',
+        component: AnnouncementManage,
+        meta: { title: '公告管理', icon: Bell, permission: 'menu:announcement' }
+      },
+      {
+        path: '/import-export',
+        component: DataImportExport,
+        meta: { title: '数据导入导出', icon: Download, permission: 'menu:import-export' }
+      },
       {
         path: '/dictionary',
         component: DictionaryManage,

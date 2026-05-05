@@ -151,6 +151,17 @@ app.whenReady().then(() => {
     if (win) win.webContents.openDevTools()
   })
 
+  // Announcements
+  ipcMain.handle('announcement:getAll', (_, options) => db.getAnnouncements(options))
+  ipcMain.handle('announcement:getById', (_, id) => db.getAnnouncementById(id))
+  ipcMain.handle('announcement:add', (_, data, operator) => {
+    console.log('[Main] 收到新增公告请求, 内容长度:', data?.content?.length)
+    return db.addAnnouncement(data, operator)
+  })
+  ipcMain.handle('announcement:update', (_, id, data, operator) => db.updateAnnouncement(id, data, operator))
+  ipcMain.handle('announcement:delete', (_, id, operator) => db.deleteAnnouncement(id, operator))
+  ipcMain.handle('announcement:getActive', (_, limit) => db.getActiveAnnouncements(limit))
+
   createWindow()
 
   app.on('activate', () => {

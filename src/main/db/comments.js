@@ -19,7 +19,8 @@ const tableComments = {
   permissions: '权限表：定义系统权限（菜单权限、按钮权限）',
   role_permissions: '角色权限关联表：配置角色拥有的权限',
   user_roles: '用户角色关联表：分配用户的角色',
-  operation_logs: '操作日志表：记录用户操作历史'
+  operation_logs: '操作日志表：记录用户操作历史',
+  announcements: '公告表：存储系统公告信息'
 }
 
 /**
@@ -137,6 +138,22 @@ const fieldComments = {
     detail: '操作详情（JSON格式）',
     ip: '操作IP地址',
     created_at: '创建时间（Unix时间戳）'
+  },
+  announcements: {
+    id: '主键，自增',
+    title: '公告标题',
+    content: '公告内容',
+    type: '公告类型（normal-普通，important-重要，emergency-紧急）',
+    status: '公告状态（draft-草稿，published-已发布，archived-已归档）',
+    publisher_id: '发布人ID',
+    publisher_name: '发布人名称',
+    publish_time: '发布时间（Unix时间戳）',
+    expire_time: '过期时间（Unix时间戳）',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
   }
 }
 

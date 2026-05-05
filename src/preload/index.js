@@ -85,4 +85,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     executeSql: (sql, operator) => ipcRenderer.invoke('db:executeSql', sql, operator),
     getComments: () => ipcRenderer.invoke('db:getComments'),
   },
+  announcement: {
+    getAll: (options) => ipcRenderer.invoke('announcement:getAll', options),
+    getById: (id) => ipcRenderer.invoke('announcement:getById', id),
+    add: (data, operator) => ipcRenderer.invoke('announcement:add', data, operator),
+    update: (id, data, operator) => ipcRenderer.invoke('announcement:update', id, data, operator),
+    delete: (id, operator) => ipcRenderer.invoke('announcement:delete', id, operator),
+    getActive: (limit) => ipcRenderer.invoke('announcement:getActive', limit),
+  },
 })

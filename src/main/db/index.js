@@ -12,6 +12,7 @@ const permission = require('./permission')
 const log = require('./log')
 const init = require('./init')
 const comments = require('./comments')
+const announcement = require('./announcement')
 
 /**
  * 初始化数据库
@@ -239,6 +240,13 @@ module.exports = {
   getLogModules: log.getModules,
   getLogActions: log.getActions,
   clearLogs: log.clearLogs,
+  // 公告模块
+  getAnnouncements: announcement.getAnnouncements,
+  getAnnouncementById: announcement.getAnnouncementById,
+  addAnnouncement: announcement.addAnnouncement,
+  updateAnnouncement: announcement.updateAnnouncement,
+  deleteAnnouncement: announcement.deleteAnnouncement,
+  getActiveAnnouncements: announcement.getActiveAnnouncements,
   // 数据库管理
   getTables,
   getTableSchema,

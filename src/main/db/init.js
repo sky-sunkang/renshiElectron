@@ -662,12 +662,15 @@ function initPermissionSeedData() {
     { code: 'menu:permission', name: '权限管理菜单', type: 'menu', description: '访问权限管理页面' },
     { code: 'menu:log', name: '操作日志菜单', type: 'menu', description: '访问操作日志页面' },
     { code: 'menu:database', name: '数据库管理菜单', type: 'menu', description: '访问数据库管理页面' },
+    { code: 'menu:announcement', name: '公告管理菜单', type: 'menu', description: '访问公告管理页面' },
+    { code: 'menu:import-export', name: '数据导入导出菜单', type: 'menu', description: '访问数据导入导出页面' },
     // 员工管理按钮权限
     { code: 'emp:add', name: '新增员工', type: 'button', description: '新增员工按钮' },
     { code: 'emp:edit', name: '编辑员工', type: 'button', description: '编辑员工按钮' },
     { code: 'emp:delete', name: '删除员工', type: 'button', description: '删除员工按钮' },
     { code: 'emp:batchDelete', name: '批量删除员工', type: 'button', description: '批量删除员工按钮' },
     { code: 'emp:export', name: '导出员工', type: 'button', description: '导出员工数据按钮' },
+    { code: 'emp:import', name: '导入员工', type: 'button', description: '导入员工数据按钮' },
     // 部门管理按钮权限
     { code: 'dept:add', name: '新增部门', type: 'button', description: '新增部门按钮' },
     { code: 'dept:edit', name: '编辑部门', type: 'button', description: '编辑部门按钮' },
@@ -691,7 +694,11 @@ function initPermissionSeedData() {
     { code: 'db:query', name: '执行SQL', type: 'button', description: '执行SQL查询按钮' },
     { code: 'db:export', name: '导出数据', type: 'button', description: '导出数据库数据按钮' },
     { code: 'db:edit', name: '编辑数据', type: 'button', description: '编辑表数据按钮' },
-    { code: 'db:delete', name: '删除数据', type: 'button', description: '删除表数据按钮' }
+    { code: 'db:delete', name: '删除数据', type: 'button', description: '删除表数据按钮' },
+    // 公告管理按钮权限
+    { code: 'announcement:add', name: '发布公告', type: 'button', description: '发布公告按钮' },
+    { code: 'announcement:edit', name: '编辑公告', type: 'button', description: '编辑公告按钮' },
+    { code: 'announcement:delete', name: '删除公告', type: 'button', description: '删除公告按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
@@ -974,6 +981,35 @@ function initOperationLogTables() {
   console.log('[DB] operation_logs table initialized')
 }
 
+/**
+ * 初始化公告表结构
+ */
+function initAnnouncementTables() {
+  const db = getDb()
+
+  // 创建公告表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS announcements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      content TEXT NOT NULL,
+      type TEXT DEFAULT 'normal',
+      status TEXT DEFAULT 'published',
+      publisher_id INTEGER,
+      publisher_name TEXT,
+      publish_time INTEGER,
+      expire_time INTEGER,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] announcements table initialized')
+}
+
 // ==================== 统一初始化入口 ====================
 
 /**
@@ -985,6 +1021,7 @@ function initAllTables() {
   initDictTables()
   initPermissionTables()
   initOperationLogTables()
+  initAnnouncementTables()
 }
 
 /**
