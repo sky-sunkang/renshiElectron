@@ -35,6 +35,9 @@
 │   │       ├── permission.js    # 权限模块：RBAC 权限管理
 │   │       ├── log.js           # 操作日志模块：日志记录、查询、清理
 │   │       ├── statistics.js    # 统计模块：各类统计数据查询
+│   │       ├── announcement.js  # 公告模块：公告增删改查
+│   │       ├── contract.js      # 合同模块：合同增删改查、到期提醒
+│   │       ├── attendance.js    # 考勤模块：考勤记录管理、打卡
 │   │       └── comments.js      # 表和字段注释：用于数据库管理页面显示
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
@@ -60,7 +63,11 @@
 │   │   │   ├── OperationLog.vue     # 操作日志查看
 │   │   │   ├── DatabaseManage.vue   # 数据库管理（表结构查看、数据浏览）
 │   │   │   ├── StatisticsPage.vue   # 员工统计（卡片 + 折线图 + 饼状图）
-│   │   │   └── LogStatistics.vue    # 操作统计（卡片 + 趋势图 + 分布图）
+│   │   │   ├── LogStatistics.vue    # 操作统计（卡片 + 趋势图 + 分布图）
+│   │   │   ├── AnnouncementManage.vue # 公告管理（富文本编辑器）
+│   │   │   ├── DataImportExport.vue  # 数据导入导出（Excel 导入导出）
+│   │   │   ├── ContractManage.vue    # 合同管理（合同信息管理、到期提醒）
+│   │   │   └── AttendanceManage.vue  # 考勤管理（签到签退、考勤记录）
 │   │   └── components/          # 公共组件
 │   │       ├── Auth.vue             # 权限控制组件
 │   │       └── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
@@ -110,10 +117,13 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）、操作日志记录
 - `log.js` — 操作日志记录、查询、清理
 - `statistics.js` — 统计数据查询
+- `announcement.js` — 公告 CRUD、操作日志记录
+- `contract.js` — 合同 CRUD、到期提醒、操作日志记录
+- `attendance.js` — 考勤 CRUD、打卡、操作日志记录
 - `comments.js` — 表和字段注释（数据库管理页面显示）
 
 **表结构：**
-- `departments`：id, name, description, parent_id, path_ids, path_names, is_deleted, created_by, created_at, updated_by, updated_at
+- `departments`：id, name, code, description, parent_id, path_ids, path_names, is_deleted, created_by, created_at, updated_by, updated_at
 - `employees`：id, name, account, password, gender, age, phone, email, department_id, position, salary, avatar, role_code, is_deleted, created_by, created_at, updated_by, updated_at
 - `dict_types`：id, code, name, description, is_deleted, created_by, created_at, updated_by, updated_at
 - `dict_items`：id, type_code, label, value, sort, is_deleted, created_by, created_at, updated_by, updated_at
@@ -122,12 +132,18 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `role_permissions`：id, role_id, permission_code, is_deleted, created_by, created_at
 - `user_roles`：id, user_id, role_id, is_deleted, created_by, created_at
 - `operation_logs`：id, user_id, user_name, module, action, target_type, target_id, target_name, detail, created_at
+- `announcements`：id, title, content, type, status, publisher_id, publisher_name, publish_time, expire_time, is_deleted, created_by, created_at, updated_by, updated_at
+- `contracts`：id, employee_id, contract_no, contract_type, start_date, end_date, sign_date, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `attendance`：id, employee_id, type, check_time, remark, is_deleted, created_by, created_at, updated_by, updated_at
 
 **初始化数据：**
 - 21 个部门，3 层级结构
 - 48 名员工，每人有拼音账号（如 `zhangsan`），默认密码 `123456`
 - 职位字典从员工种子数据中自动提取
 - 性别字典：男、女
+- 合同类型字典：劳动合同、实习合同、外包合同
+- 合同状态字典：生效中、已过期、已终止
+- 考勤类型字典：签到、签退
 
 **系统角色：**
 | 角色代码 | 角色名称 | 默认用户 |
@@ -144,13 +160,17 @@ npm run electron:build    # 构建并打包 Electron 应用
 **菜单结构：**
 - 员工管理（menu:employee）
 - 部门管理（menu:department）
+- 合同管理（menu:contract）
+- 考勤管理（menu:attendance）
 - 统计管理（menu:statistics）
   - 员工统计（menu:statistics:employee）
   - 操作统计（menu:statistics:log）
+- 公告管理（menu:announcement）
+- 数据导入导出（menu:import-export）
 - 系统管理（menu:system）
   - 字典管理（menu:dictionary）
   - 角色管理（menu:role）
-  - 权限管理（menu:role）
+  - 权限管理（menu:permission）
   - 操作日志（menu:log）
   - 数据库管理（menu:database）
 
@@ -158,9 +178,9 @@ npm run electron:build    # 构建并打包 Electron 应用
 | 角色 | 菜单权限 |
 |------|----------|
 | 超级管理员 | 所有权限 |
-| 管理员 | 员工管理、部门管理、统计管理、系统管理（字典管理） |
-| 人事专员 | 员工管理、部门管理、统计管理、系统管理（操作日志） |
-| 普通用户 | 员工管理、部门管理、统计管理（仅查看） |
+| 管理员 | 员工管理、部门管理、合同管理、考勤管理、统计管理、公告管理、数据导入导出、系统管理（字典管理） |
+| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、统计管理、公告管理、数据导入导出、系统管理（操作日志） |
+| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、公告管理（仅查看和打卡） |
 
 ## 界面布局
 
@@ -177,14 +197,16 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **模块格式**：主进程和预加载脚本使用 CommonJS (`require`)，渲染进程使用 ES Modules (`import`)
 - **contextIsolation**：预加载脚本启用 `contextIsolation: true`，通过 `contextBridge` 暴露 API
 - **下拉选项**：下拉选项优先使用字典管理模块来配置实现
-- **数据库文件**：`app.db` 已加入 `.gitignore`
 - **不用 TypeScript**：项目全部使用 JavaScript，每个模块的js代码尽量放到对应模块的pinia文件中
 - **代码规范**：JS 方法需写注释说明用途，方法内部关键步骤也需注释
 - **数据查询**：`emp.getAll()` 返回的员工数据包含 `department_name`（关联部门名称）；`dept.getAll()` 返回的部门数据包含 `path_ids` 和 `path_names`（自动计算的路径）
 - **滚动条**：统一使用 Element Plus 的 `el-scrollbar` 组件，保持界面风格一致
 - **公共代码组件化**：重复使用的代码尽量抽取为公共组件或工具函数，如部门树、字典下拉、表格操作栏等
 - **权限控制**：每次或调整模块需要相应的调整权限配置，登录后用户权限存储在 `currentUser.permissions` 中，通过 `v-if="hasPermission('xxx')"` 控制按钮显示
-- **新增菜单权限**：每次新增菜单页面时，必须在 `init.js` 的 `permissions` 数组中添加对应的菜单权限（如 `menu:xxx`），并在 `assignPermissionsToRoles` 函数中配置各角色的权限分配
+- **新增菜单权限**：每次新增菜单页面时，必须完成以下三步：
+  1. 在 `init.js` 的 `permissions` 数组中添加对应的菜单权限（如 `menu:xxx`）
+  2. 在 `init.js` 的 `assignPermissionsToRoles` 函数中配置各角色的权限分配
+  3. 在 `RolePermissionManage.vue` 的 `moduleConfig` 数组中添加模块配置，否则权限管理页面无法勾选该模块权限
 - **子菜单权限**：父菜单和子菜单需要分别配置权限，如统计管理（menu:statistics）和员工统计（menu:statistics:employee）
 - **表设计**：所有的表都要删除状态创建人和时间，修改人和时间，所有的删除都需要使用逻辑删除。
 - **操作日志记录**：所有系统操作需要增加操作日志，日志格式：`用户名 时间 操作类型 操作对象 详情`
