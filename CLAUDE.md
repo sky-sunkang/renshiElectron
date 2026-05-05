@@ -155,7 +155,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `salary_adjustments`：id, employee_id, type, before_salary, adjust_amount, after_salary, effective_date, reason, remark, is_deleted, created_by, created_at, updated_by, updated_at
 
 **初始化数据：**
-- 21 个部门，3 层级结构
+- 21 个部门，3 层级结构，每个部门有编码（如 HQ、TECH、TECH-FE 等）
 - 48 名员工，每人有拼音账号（如 `zhangsan`），默认密码 `123456`
 - 职位字典从员工种子数据中自动提取
 - 性别字典：男、女

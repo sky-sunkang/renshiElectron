@@ -67,9 +67,10 @@
     <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑合同' : '新增合同'" width="600" destroy-on-close>
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="员工" prop="employee_id">
-          <el-select v-model="form.employee_id" filterable placeholder="请选择员工" style="width: 100%">
-            <el-option v-for="emp in employees" :key="emp.id" :label="`${emp.name} (${emp.account})`" :value="emp.id" />
-          </el-select>
+          <div class="employee-select">
+            <el-input :value="selectedEmployeeName" readonly placeholder="请选择员工" style="flex: 1" />
+            <el-button type="primary" @click="showEmpSelector">选择</el-button>
+          </div>
         </el-form-item>
         <el-form-item label="合同编号" prop="contract_no">
           <el-input v-model="form.contract_no" placeholder="请输入合同编号" />
@@ -102,6 +103,14 @@
         <el-button type="primary" @click="handleSubmit" :loading="submitting">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 员工选择器 -->
+    <EmployeeSelector
+      v-model="empSelectorVisible"
+      :multiple="false"
+      :selected-ids="form.employee_id ? [form.employee_id] : []"
+      @confirm="handleEmpConfirm"
+    />
   </div>
 </template>
 
@@ -109,17 +118,18 @@
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePermissionStore } from '../stores/permission.js'
-import { useEmpStore } from '../stores/emp.js'
 import { useDictStore } from '../stores/dict.js'
+import { useEmpStore } from '../stores/emp.js'
 import { storeToRefs } from 'pinia'
 import * as XLSX from 'xlsx'
+import EmployeeSelector from '../components/EmployeeSelector.vue'
 
 const permStore = usePermissionStore()
-const empStore = useEmpStore()
 const dictStore = useDictStore()
+const empStore = useEmpStore()
 const { isSuperAdmin, permissions } = storeToRefs(permStore)
-const { list: employees } = storeToRefs(empStore)
 const { list: dictList } = storeToRefs(dictStore)
+const { list: employees } = storeToRefs(empStore)
 
 // 字典数据
 const contractTypes = computed(() => dictList.value.filter(item => item.type_code === 'contract_type'))
@@ -138,6 +148,7 @@ const isEdit = ref(false)
 const submitting = ref(false)
 const formRef = ref(null)
 const currentId = ref(null)
+const empSelectorVisible = ref(false)
 
 const form = ref({
   employee_id: null,
@@ -148,6 +159,13 @@ const form = ref({
   sign_date: null,
   status: 'active',
   remark: ''
+})
+
+// 已选员工名称显示
+const selectedEmployeeName = computed(() => {
+  if (!form.value.employee_id) return ''
+  const emp = employees.value.find(e => e.id === form.value.employee_id)
+  return emp ? `${emp.name} (${emp.account})` : ''
 })
 
 const rules = {
@@ -362,6 +380,22 @@ async function handleExport() {
   }
 }
 
+/**
+ * 显示员工选择器
+ */
+function showEmpSelector() {
+  empSelectorVisible.value = true
+}
+
+/**
+ * 处理员工选择确认
+ */
+function handleEmpConfirm(selectedList) {
+  if (selectedList.length > 0) {
+    form.value.employee_id = selectedList[0].id
+  }
+}
+
 onMounted(() => {
   empStore.loadAll()
   dictStore.loadAll()
@@ -387,5 +421,10 @@ onMounted(() => {
 .pagination {
   margin-top: 16px;
   justify-content: flex-end;
+}
+
+.employee-select {
+  display: flex;
+  gap: 8px;
 }
 </style>

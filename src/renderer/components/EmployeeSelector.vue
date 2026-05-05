@@ -28,11 +28,14 @@
       <div class="emp-panel">
         <div class="panel-title">
           <el-checkbox
+            v-if="multiple"
             v-model="includeChildren"
             label="包含子部门"
             size="small"
           />
+          <span v-else>人员列表</span>
           <el-checkbox
+            v-if="multiple"
             :model-value="isAllSelected"
             :indeterminate="isPartialSelected"
             @change="toggleSelectAll"
@@ -59,8 +62,11 @@
               class="emp-item"
               :class="{ selected: isInSelectedList(emp) }"
             >
-              <el-checkbox :model-value="isInSelectedList(emp)" @change="toggleSelect(emp)" />
-              <span class="emp-name" @click="toggleSelect(emp)">{{ emp.name }}（{{ emp.account }}）</span>
+              <el-checkbox v-if="multiple" :model-value="isInSelectedList(emp)" @change="toggleSelect(emp)" />
+              <el-radio v-else :model-value="selectedList[0]?.id" :label="emp.id" @change="toggleSelect(emp)">
+                <span class="emp-name">{{ emp.name }}（{{ emp.account }}）</span>
+              </el-radio>
+              <span v-if="multiple" class="emp-name" @click="toggleSelect(emp)">{{ emp.name }}（{{ emp.account }}）</span>
               <el-tooltip placement="right" :show-after="300">
                 <template #content>
                   <div class="emp-tooltip">
@@ -83,7 +89,7 @@
       </div>
 
       <!-- 右侧已选人员 -->
-      <div class="selected-panel">
+      <div v-if="multiple" class="selected-panel">
         <div class="panel-title">已选人员 ({{ selectedList.length }})</div>
         <el-scrollbar class="selected-scroll">
           <div class="selected-list">
@@ -139,6 +145,10 @@ const props = defineProps({
   selectedIds: {
     type: Array,
     default: () => []
+  },
+  multiple: {
+    type: Boolean,
+    default: true
   }
 })
 
@@ -272,15 +282,22 @@ function toggleSelectAll(checked) {
  */
 function toggleSelect(emp) {
   console.log('[EmployeeSelector] toggleSelect:', emp.name, emp.id)
-  const index = selectedList.value.findIndex(s => s.id === emp.id)
-  if (index > -1) {
-    // 已选中则移除
-    selectedList.value.splice(index, 1)
-    console.log('[EmployeeSelector] removed, selectedList:', selectedList.value.length)
+  if (props.multiple) {
+    // 多选模式
+    const index = selectedList.value.findIndex(s => s.id === emp.id)
+    if (index > -1) {
+      // 已选中则移除
+      selectedList.value.splice(index, 1)
+      console.log('[EmployeeSelector] removed, selectedList:', selectedList.value.length)
+    } else {
+      // 未选中则添加
+      selectedList.value.push(emp)
+      console.log('[EmployeeSelector] added, selectedList:', selectedList.value.length)
+    }
   } else {
-    // 未选中则添加
-    selectedList.value.push(emp)
-    console.log('[EmployeeSelector] added, selectedList:', selectedList.value.length)
+    // 单选模式
+    selectedList.value = [emp]
+    console.log('[EmployeeSelector] single select:', emp.name)
   }
 }
 

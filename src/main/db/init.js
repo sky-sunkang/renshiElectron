@@ -191,36 +191,36 @@ function initDepartmentSeedData() {
   deptStmt.free()
 
   if (Number(deptCount.c) === 0) {
-    const stmt = db.prepare('INSERT INTO departments (name, description, parent_id, is_deleted) VALUES (?, ?, ?, 0)')
+    const stmt = db.prepare('INSERT INTO departments (name, code, description, parent_id, is_deleted) VALUES (?, ?, ?, ?, 0)')
     // 第一层：总公司
-    stmt.run(['xx公司', '总公司', 0])
+    stmt.run(['xx公司', 'HQ', '总公司', 0])
     // 第二层：一级部门
-    stmt.run(['技术部', '负责产品研发与技术维护', 1])
-    stmt.run(['市场部', '负责市场推广与客户拓展', 1])
-    stmt.run(['人事部', '负责招聘与员工管理', 1])
-    stmt.run(['财务部', '负责财务核算与资金管理', 1])
-    stmt.run(['运营部', '负责产品运营与数据分析', 1])
-    stmt.run(['行政部', '负责后勤与行政管理', 1])
+    stmt.run(['技术部', 'TECH', '负责产品研发与技术维护', 1])
+    stmt.run(['市场部', 'MARKET', '负责市场推广与客户拓展', 1])
+    stmt.run(['人事部', 'HR', '负责招聘与员工管理', 1])
+    stmt.run(['财务部', 'FIN', '负责财务核算与资金管理', 1])
+    stmt.run(['运营部', 'OPS', '负责产品运营与数据分析', 1])
+    stmt.run(['行政部', 'ADMIN', '负责后勤与行政管理', 1])
     // 第三层：技术部
-    stmt.run(['前端组', '负责前端开发', 2])
-    stmt.run(['后端组', '负责后端开发', 2])
-    stmt.run(['测试组', '负责产品质量测试', 2])
-    stmt.run(['运维组', '负责系统运维', 2])
+    stmt.run(['前端组', 'TECH-FE', '负责前端开发', 2])
+    stmt.run(['后端组', 'TECH-BE', '负责后端开发', 2])
+    stmt.run(['测试组', 'TECH-QA', '负责产品质量测试', 2])
+    stmt.run(['运维组', 'TECH-OPS', '负责系统运维', 2])
     // 第三层：市场部
-    stmt.run(['品牌推广组', '负责品牌宣传', 3])
-    stmt.run(['销售组', '负责客户销售', 3])
-    stmt.run(['客户支持组', '负责客户服务', 3])
+    stmt.run(['品牌推广组', 'MARKET-BRAND', '负责品牌宣传', 3])
+    stmt.run(['销售组', 'MARKET-SALES', '负责客户销售', 3])
+    stmt.run(['客户支持组', 'MARKET-CS', '负责客户服务', 3])
     // 第三层：人事部
-    stmt.run(['招聘组', '负责人才招聘', 4])
-    stmt.run(['培训组', '负责员工培训', 4])
+    stmt.run(['招聘组', 'HR-REC', '负责人才招聘', 4])
+    stmt.run(['培训组', 'HR-TRAIN', '负责员工培训', 4])
     // 第三层：财务部
-    stmt.run(['会计组', '负责财务核算', 5])
-    stmt.run(['审计组', '负责内部审计', 5])
+    stmt.run(['会计组', 'FIN-ACC', '负责财务核算', 5])
+    stmt.run(['审计组', 'FIN-AUD', '负责内部审计', 5])
     // 第三层：运营部
-    stmt.run(['产品组', '负责产品策划', 6])
-    stmt.run(['数据组', '负责数据分析', 6])
+    stmt.run(['产品组', 'OPS-PROD', '负责产品策划', 6])
+    stmt.run(['数据组', 'OPS-DATA', '负责数据分析', 6])
     // 第三层：行政部
-    stmt.run(['后勤组', '负责后勤保障', 7])
+    stmt.run(['后勤组', 'ADMIN-SUP', '负责后勤保障', 7])
     stmt.free()
     console.log('[DB] departments seeded')
   }

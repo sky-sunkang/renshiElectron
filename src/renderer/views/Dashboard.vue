@@ -236,7 +236,7 @@ async function loadStats() {
     // 招聘中岗位
     if (hasPermission('menu:recruitment')) {
       const positionResult = await window.electronAPI.position.getAll({ page: 1, pageSize: 1000 })
-      stats.value.activePositions = positionResult.list.filter(p => p.status === 'recruiting').length
+      stats.value.activePositions = positionResult.list.filter(p => p.status === 'open').length
     }
   } catch (e) {
     console.error('加载统计数据失败', e)
