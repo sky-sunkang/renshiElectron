@@ -375,11 +375,17 @@ async function loadAttendanceStats() {
         if (!dayMap[key]) dayMap[key] = { check_in: false, check_out: false, checkInTime: null, checkOutTime: null }
         if (r.type === 'check_in') {
           dayMap[key].check_in = true
-          dayMap[key].checkInTime = r.check_time
+          // 保留最早的签到时间
+          if (!dayMap[key].checkInTime || r.check_time < dayMap[key].checkInTime) {
+            dayMap[key].checkInTime = r.check_time
+          }
         }
         if (r.type === 'check_out') {
           dayMap[key].check_out = true
-          dayMap[key].checkOutTime = r.check_time
+          // 保留最晚的签退时间
+          if (!dayMap[key].checkOutTime || r.check_time > dayMap[key].checkOutTime) {
+            dayMap[key].checkOutTime = r.check_time
+          }
         }
       })
 
