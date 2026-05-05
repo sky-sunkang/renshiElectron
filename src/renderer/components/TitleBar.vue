@@ -4,6 +4,9 @@
       <span class="app-title">人事管理系统</span>
     </div>
     <div class="window-controls">
+      <el-button text class="win-btn dev-btn" @click="openDevTools">
+        <el-icon><Monitor /></el-icon>
+      </el-button>
       <el-button text class="win-btn" @click="minimizeWindow">
         <el-icon><Minus /></el-icon>
       </el-button>
@@ -19,7 +22,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Minus, FullScreen, Crop, Close } from '@element-plus/icons-vue'
+import { Minus, FullScreen, Crop, Close, Monitor } from '@element-plus/icons-vue'
 
 const isMaximized = ref(false)
 
@@ -27,6 +30,13 @@ onMounted(async () => {
   // 组件挂载时获取窗口最大化状态
   isMaximized.value = await window.electronAPI.window.isMaximized()
 })
+
+/**
+ * 打开开发者工具
+ */
+async function openDevTools() {
+  await window.electronAPI.window.openDevTools()
+}
 
 /**
  * 最小化窗口
@@ -93,6 +103,14 @@ async function closeWindow() {
 
 .win-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+.dev-btn {
+  color: #64748b;
+}
+
+.dev-btn:hover {
+  color: #22d3ee;
 }
 
 .close-btn:hover {

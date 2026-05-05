@@ -146,6 +146,10 @@ app.whenReady().then(() => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.close()
   })
+  ipcMain.handle('window:openDevTools', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) win.webContents.openDevTools()
+  })
 
   createWindow()
 

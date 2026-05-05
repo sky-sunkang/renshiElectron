@@ -17,6 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     maximize: () => ipcRenderer.invoke('window:maximize'),
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
     close: () => ipcRenderer.invoke('window:close'),
+    openDevTools: () => ipcRenderer.invoke('window:openDevTools'),
   },
   auth: {
     login: (name, password) => ipcRenderer.invoke('auth:login', name, password),
