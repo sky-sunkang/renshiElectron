@@ -324,6 +324,7 @@ async function handleCheckIn() {
     }, user)
     ElMessage.success('签到成功')
     loadTodayAttendance()
+    loadAttendanceStats()
   } catch (e) {
     ElMessage.error('签到失败：' + e.message)
   }
@@ -342,6 +343,7 @@ async function handleCheckOut() {
     }, user)
     ElMessage.success('签退成功')
     loadTodayAttendance()
+    loadAttendanceStats()
   } catch (e) {
     ElMessage.error('签退失败：' + e.message)
   }

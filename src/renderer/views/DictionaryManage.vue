@@ -6,17 +6,29 @@
         <h3>字典类型</h3>
         <el-button v-if="permStore.hasPermission('dict:add')" type="primary" size="small" @click="openTypeDialog()">+ 新增</el-button>
       </div>
+      <div class="search-box">
+        <el-input v-model="searchKeyword" placeholder="搜索字典类型" clearable size="small" prefix-icon="Search" />
+      </div>
       <el-scrollbar class="type-scroll">
-        <el-table :data="types" stripe border size="small" highlight-current-row @current-change="handleTypeChange" style="width: 100%">
-          <el-table-column prop="code" label="类型编码" min-width="80" show-overflow-tooltip />
-          <el-table-column prop="name" label="类型名称" min-width="80" show-overflow-tooltip />
-          <el-table-column label="操作" width="120" align="center" fixed="right">
-            <template #default="scope">
-              <el-button v-if="permStore.hasPermission('dict:edit')" link type="primary" size="small" @click="openTypeDialog(scope.row)">编辑</el-button>
-              <el-button v-if="permStore.hasPermission('dict:delete')" link type="danger" size="small" @click="removeType(scope.row)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="type-list">
+          <div
+            v-for="item in filteredTypes"
+            :key="item.id"
+            :class="['type-item', currentType?.id === item.id ? 'active' : '']"
+            @click="handleTypeChange(item)"
+          >
+            <div class="type-info">
+              <div class="type-name">{{ item.name }}</div>
+              <div class="type-code">{{ item.code }}</div>
+            </div>
+            <div class="type-actions" @click.stop>
+              <el-button v-if="permStore.hasPermission('dict:edit')" link type="primary" size="small" @click="openTypeDialog(item)">编辑</el-button>
+              <el-button v-if="permStore.hasPermission('dict:delete')" link type="danger" size="small" @click="removeType(item)">删除</el-button>
+            </div>
+          </div>
+        </div>
+        <el-empty v-if="filteredTypes.length === 0 && types.length > 0" description="未找到匹配结果" :image-size="60" />
+        <el-empty v-if="types.length === 0" description="暂无字典类型" :image-size="60" />
       </el-scrollbar>
     </div>
 
@@ -84,7 +96,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { usePermissionStore } from '../stores/permission.js'
 import { useAuthStore } from '../stores/auth.js'
@@ -102,6 +114,17 @@ function getOperator() {
 const types = ref([])
 const currentType = ref(null)
 const loading = ref(false)
+const searchKeyword = ref('')
+
+// 过滤后的字典类型
+const filteredTypes = computed(() => {
+  if (!searchKeyword.value) return types.value
+  const keyword = searchKeyword.value.toLowerCase()
+  return types.value.filter(t =>
+    t.name.toLowerCase().includes(keyword) ||
+    t.code.toLowerCase().includes(keyword)
+  )
+})
 
 // 字典项数据
 const items = ref([])
@@ -262,8 +285,8 @@ onMounted(loadTypes)
   overflow: hidden;
 }
 .dict-type-panel {
-  width: 280px;
-  min-width: 280px;
+  width: 320px;
+  min-width: 320px;
   height: 100%;
   background: #fff;
   border-radius: 8px;
@@ -293,16 +316,56 @@ onMounted(loadTypes)
   font-size: 16px;
   color: #1e293b;
 }
+.search-box {
+  padding: 0 16px 12px 16px;
+  flex-shrink: 0;
+}
 .type-scroll {
   flex: 1;
   min-height: 0;
   padding: 0 16px 16px 16px;
 }
-.type-scroll :deep(.el-scrollbar__view) {
-  height: 100%;
+.type-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-.type-scroll :deep(.el-table) {
-  width: 100% !important;
+.type-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.type-item:hover {
+  background: #f5f7fa;
+  border-color: #c0c4cc;
+}
+.type-item.active {
+  background: #ecf5ff;
+  border-color: #409eff;
+}
+.type-info {
+  flex: 1;
+  min-width: 0;
+}
+.type-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+.type-code {
+  font-size: 12px;
+  color: #909399;
+}
+.type-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
 }
 .item-scroll {
   flex: 1;
