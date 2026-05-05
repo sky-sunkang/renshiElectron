@@ -534,6 +534,126 @@ function initDictSeedData() {
     itemStmt.free()
     console.log('[DB] attendance_type dictionary seeded')
   }
+
+  // 初始化岗位状态字典
+  const positionStatusCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'position_status' AND is_deleted = 0")
+  positionStatusCheckStmt.step()
+  const positionStatusCount = Number(positionStatusCheckStmt.getAsObject().c)
+  positionStatusCheckStmt.free()
+
+  if (positionStatusCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['position_status', '岗位状态', '招聘岗位状态选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['position_status', '招聘中', 'open', 1])
+    itemStmt.run(['position_status', '已关闭', 'closed', 2])
+    itemStmt.run(['position_status', '已暂停', 'paused', 3])
+    itemStmt.free()
+    console.log('[DB] position_status dictionary seeded')
+  }
+
+  // 初始化候选人状态字典
+  const candidateStatusCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'candidate_status' AND is_deleted = 0")
+  candidateStatusCheckStmt.step()
+  const candidateStatusCount = Number(candidateStatusCheckStmt.getAsObject().c)
+  candidateStatusCheckStmt.free()
+
+  if (candidateStatusCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['candidate_status', '候选人状态', '候选人状态选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['candidate_status', '待筛选', 'pending', 1])
+    itemStmt.run(['candidate_status', '面试中', 'interviewing', 2])
+    itemStmt.run(['candidate_status', '已通过', 'passed', 3])
+    itemStmt.run(['candidate_status', '已拒绝', 'rejected', 4])
+    itemStmt.run(['candidate_status', '已入职', 'hired', 5])
+    itemStmt.free()
+    console.log('[DB] candidate_status dictionary seeded')
+  }
+
+  // 初始化面试状态字典
+  const interviewStatusCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'interview_status' AND is_deleted = 0")
+  interviewStatusCheckStmt.step()
+  const interviewStatusCount = Number(interviewStatusCheckStmt.getAsObject().c)
+  interviewStatusCheckStmt.free()
+
+  if (interviewStatusCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['interview_status', '面试状态', '面试状态选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['interview_status', '待面试', 'scheduled', 1])
+    itemStmt.run(['interview_status', '进行中', 'ongoing', 2])
+    itemStmt.run(['interview_status', '已完成', 'completed', 3])
+    itemStmt.run(['interview_status', '已取消', 'cancelled', 4])
+    itemStmt.free()
+    console.log('[DB] interview_status dictionary seeded')
+  }
+
+  // 初始化面试类型字典
+  const interviewTypeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'interview_type' AND is_deleted = 0")
+  interviewTypeCheckStmt.step()
+  const interviewTypeCount = Number(interviewTypeCheckStmt.getAsObject().c)
+  interviewTypeCheckStmt.free()
+
+  if (interviewTypeCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['interview_type', '面试类型', '面试类型选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['interview_type', '现场面试', 'onsite', 1])
+    itemStmt.run(['interview_type', '电话面试', 'phone', 2])
+    itemStmt.run(['interview_type', '视频面试', 'video', 3])
+    itemStmt.free()
+    console.log('[DB] interview_type dictionary seeded')
+  }
+
+  // 初始化考核等级字典
+  const assessmentLevelCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'assessment_level' AND is_deleted = 0")
+  assessmentLevelCheckStmt.step()
+  const assessmentLevelCount = Number(assessmentLevelCheckStmt.getAsObject().c)
+  assessmentLevelCheckStmt.free()
+
+  if (assessmentLevelCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['assessment_level', '考核等级', '绩效考核等级选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['assessment_level', '优秀', 'excellent', 1])
+    itemStmt.run(['assessment_level', '良好', 'good', 2])
+    itemStmt.run(['assessment_level', '合格', 'qualified', 3])
+    itemStmt.run(['assessment_level', '待改进', 'improve', 4])
+    itemStmt.run(['assessment_level', '不合格', 'unqualified', 5])
+    itemStmt.free()
+    console.log('[DB] assessment_level dictionary seeded')
+  }
+
+  // 初始化考核指标类别字典
+  const indicatorCategoryCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'indicator_category' AND is_deleted = 0")
+  indicatorCategoryCheckStmt.step()
+  const indicatorCategoryCount = Number(indicatorCategoryCheckStmt.getAsObject().c)
+  indicatorCategoryCheckStmt.free()
+
+  if (indicatorCategoryCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['indicator_category', '指标类别', '考核指标类别选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['indicator_category', '工作业绩', 'performance', 1])
+    itemStmt.run(['indicator_category', '工作态度', 'attitude', 2])
+    itemStmt.run(['indicator_category', '工作能力', 'ability', 3])
+    itemStmt.run(['indicator_category', '团队协作', 'teamwork', 4])
+    itemStmt.free()
+    console.log('[DB] indicator_category dictionary seeded')
+  }
 }
 
 // ==================== 权限初始化 ====================
@@ -772,7 +892,29 @@ function initPermissionSeedData() {
     { code: 'attendance:check', name: '打卡', type: 'button', description: '签到签退按钮' },
     { code: 'attendance:edit', name: '编辑考勤', type: 'button', description: '编辑考勤记录按钮' },
     { code: 'attendance:delete', name: '删除考勤', type: 'button', description: '删除考勤记录按钮' },
-    { code: 'attendance:export', name: '导出考勤', type: 'button', description: '导出考勤数据按钮' }
+    { code: 'attendance:export', name: '导出考勤', type: 'button', description: '导出考勤数据按钮' },
+    // 招聘管理菜单权限
+    { code: 'menu:recruitment', name: '招聘管理菜单', type: 'menu', description: '访问招聘管理页面' },
+    // 招聘管理按钮权限
+    { code: 'position:add', name: '新增岗位', type: 'button', description: '新增招聘岗位按钮' },
+    { code: 'position:edit', name: '编辑岗位', type: 'button', description: '编辑招聘岗位按钮' },
+    { code: 'position:delete', name: '删除岗位', type: 'button', description: '删除招聘岗位按钮' },
+    { code: 'candidate:add', name: '新增候选人', type: 'button', description: '新增候选人按钮' },
+    { code: 'candidate:edit', name: '编辑候选人', type: 'button', description: '编辑候选人按钮' },
+    { code: 'candidate:delete', name: '删除候选人', type: 'button', description: '删除候选人按钮' },
+    { code: 'interview:add', name: '安排面试', type: 'button', description: '安排面试按钮' },
+    { code: 'interview:edit', name: '编辑面试', type: 'button', description: '编辑面试按钮' },
+    { code: 'interview:delete', name: '删除面试', type: 'button', description: '删除面试按钮' },
+    // 绩效考核菜单权限
+    { code: 'menu:performance', name: '绩效考核菜单', type: 'menu', description: '访问绩效考核页面' },
+    // 绩效考核按钮权限
+    { code: 'indicator:add', name: '新增指标', type: 'button', description: '新增考核指标按钮' },
+    { code: 'indicator:edit', name: '编辑指标', type: 'button', description: '编辑考核指标按钮' },
+    { code: 'indicator:delete', name: '删除指标', type: 'button', description: '删除考核指标按钮' },
+    { code: 'assessment:add', name: '新增考核', type: 'button', description: '新增考核记录按钮' },
+    { code: 'assessment:edit', name: '编辑考核', type: 'button', description: '编辑考核记录按钮' },
+    { code: 'assessment:delete', name: '删除考核', type: 'button', description: '删除考核记录按钮' },
+    { code: 'assessment:score', name: '评分', type: 'button', description: '考核评分按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
@@ -846,14 +988,19 @@ function assignPermissionsToRoles() {
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:dictionary',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
     'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete',
     'contract:add', 'contract:edit', 'contract:delete', 'contract:export',
     'attendance:check', 'attendance:edit', 'attendance:delete', 'attendance:export',
     'announcement:add', 'announcement:edit', 'announcement:delete',
-    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export'
+    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export',
+    'position:add', 'position:edit', 'position:delete',
+    'candidate:add', 'candidate:edit', 'candidate:delete',
+    'interview:add', 'interview:edit', 'interview:delete',
+    'indicator:add', 'indicator:edit', 'indicator:delete',
+    'assessment:add', 'assessment:edit', 'assessment:delete', 'assessment:score'
   ]
   const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   adminPermissions.forEach(code => adminStmt.run([adminId, code]))
@@ -862,13 +1009,18 @@ function assignPermissionsToRoles() {
   // 人事专员权限
   const hrPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:log',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance',
     'emp:add', 'emp:edit', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit',
     'contract:add', 'contract:edit', 'contract:export',
     'attendance:check', 'attendance:edit', 'attendance:export',
     'announcement:add', 'announcement:edit', 'announcement:delete',
-    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export'
+    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export',
+    'position:add', 'position:edit',
+    'candidate:add', 'candidate:edit',
+    'interview:add', 'interview:edit',
+    'indicator:add', 'indicator:edit',
+    'assessment:add', 'assessment:edit', 'assessment:score'
   ]
   const hrStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   hrPermissions.forEach(code => hrStmt.run([hrId, code]))
@@ -1150,6 +1302,138 @@ function initAttendanceTables() {
   console.log('[DB] attendance table initialized')
 }
 
+/**
+ * 初始化招聘管理表结构
+ */
+function initRecruitmentTables() {
+  const db = getDb()
+
+  // 创建岗位表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS positions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      department_id INTEGER,
+      department_name TEXT,
+      salary_range TEXT,
+      requirements TEXT,
+      description TEXT,
+      status TEXT DEFAULT 'open',
+      headcount INTEGER DEFAULT 1,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  // 创建候选人表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS candidates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      position_id INTEGER,
+      name TEXT NOT NULL,
+      phone TEXT,
+      email TEXT,
+      resume TEXT,
+      source TEXT,
+      status TEXT DEFAULT 'pending',
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  // 创建面试表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS interviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      candidate_id INTEGER NOT NULL,
+      interviewer_id INTEGER,
+      interview_time INTEGER,
+      location TEXT,
+      round INTEGER DEFAULT 1,
+      type TEXT DEFAULT 'onsite',
+      status TEXT DEFAULT 'scheduled',
+      result TEXT,
+      feedback TEXT,
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] recruitment tables initialized')
+}
+
+/**
+ * 初始化绩效考核表结构
+ */
+function initPerformanceTables() {
+  const db = getDb()
+
+  // 创建考核指标表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS performance_indicators (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      category TEXT,
+      description TEXT,
+      max_score INTEGER DEFAULT 100,
+      weight REAL DEFAULT 1,
+      sort INTEGER DEFAULT 0,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  // 创建考核记录表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS assessments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      period TEXT,
+      total_score REAL DEFAULT 0,
+      level TEXT,
+      remark TEXT,
+      status TEXT DEFAULT 'pending',
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  // 创建考核评分明细表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS assessment_details (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      assessment_id INTEGER NOT NULL,
+      indicator_id INTEGER NOT NULL,
+      score REAL DEFAULT 0,
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] performance tables initialized')
+}
+
 // ==================== 统一初始化入口 ====================
 
 /**
@@ -1164,6 +1448,8 @@ function initAllTables() {
   initAnnouncementTables()
   initContractTables()
   initAttendanceTables()
+  initRecruitmentTables()
+  initPerformanceTables()
 }
 
 /**

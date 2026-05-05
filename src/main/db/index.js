@@ -15,6 +15,8 @@ const comments = require('./comments')
 const announcement = require('./announcement')
 const contract = require('./contract')
 const attendance = require('./attendance')
+const recruitment = require('./recruitment')
+const performance = require('./performance')
 
 /**
  * 初始化数据库
@@ -263,6 +265,38 @@ module.exports = {
   deleteAttendance: attendance.deleteAttendance,
   getTodayAttendance: attendance.getTodayAttendance,
   getAttendanceStats: attendance.getAttendanceStats,
+  // 招聘模块 - 岗位管理
+  getPositions: recruitment.getPositions,
+  getPositionById: recruitment.getPositionById,
+  addPosition: recruitment.addPosition,
+  updatePosition: recruitment.updatePosition,
+  deletePosition: recruitment.deletePosition,
+  // 招聘模块 - 候选人管理
+  getCandidates: recruitment.getCandidates,
+  getCandidateById: recruitment.getCandidateById,
+  addCandidate: recruitment.addCandidate,
+  updateCandidate: recruitment.updateCandidate,
+  deleteCandidate: recruitment.deleteCandidate,
+  // 招聘模块 - 面试管理
+  getInterviews: recruitment.getInterviews,
+  addInterview: recruitment.addInterview,
+  updateInterview: recruitment.updateInterview,
+  deleteInterview: recruitment.deleteInterview,
+  // 绩效模块 - 考核指标
+  getIndicators: performance.getIndicators,
+  getIndicatorById: performance.getIndicatorById,
+  addIndicator: performance.addIndicator,
+  updateIndicator: performance.updateIndicator,
+  deleteIndicator: performance.deleteIndicator,
+  // 绩效模块 - 考核记录
+  getAssessments: performance.getAssessments,
+  getAssessmentById: performance.getAssessmentById,
+  addAssessment: performance.addAssessment,
+  updateAssessment: performance.updateAssessment,
+  deleteAssessment: performance.deleteAssessment,
+  // 绩效模块 - 评分明细
+  getAssessmentDetails: performance.getAssessmentDetails,
+  saveAssessmentDetails: performance.saveAssessmentDetails,
   // 数据库管理
   getTables,
   getTableSchema,

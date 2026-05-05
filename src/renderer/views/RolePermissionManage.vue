@@ -160,6 +160,8 @@ const moduleConfig = [
   { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
   { name: '合同管理', menuPrefix: 'menu:contract', actionPrefix: 'contract:' },
   { name: '考勤管理', menuPrefix: 'menu:attendance', actionPrefix: 'attendance:' },
+  { name: '招聘管理', menuPrefix: 'menu:recruitment', actionPrefix: 'position:' },
+  { name: '绩效考核', menuPrefix: 'menu:performance', actionPrefix: 'indicator:' },
   { name: '统计管理', menuPrefix: 'menu:statistics', actionPrefix: null },
   { name: '公告管理', menuPrefix: 'menu:announcement', actionPrefix: 'announcement:' },
   { name: '数据导入导出', menuPrefix: 'menu:import-export', actionPrefix: 'import-export:' },

@@ -13,7 +13,9 @@ import AnnouncementManage from '../views/AnnouncementManage.vue'
 import DataImportExport from '../views/DataImportExport.vue'
 import ContractManage from '../views/ContractManage.vue'
 import AttendanceManage from '../views/AttendanceManage.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock } from '@element-plus/icons-vue'
+import RecruitmentManage from '../views/RecruitmentManage.vue'
+import PerformanceManage from '../views/PerformanceManage.vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -41,6 +43,16 @@ const routes = [
     path: '/attendance',
     component: AttendanceManage,
     meta: { title: '考勤管理', icon: Clock, permission: 'menu:attendance' }
+  },
+  {
+    path: '/recruitment',
+    component: RecruitmentManage,
+    meta: { title: '招聘管理', icon: Briefcase, permission: 'menu:recruitment' }
+  },
+  {
+    path: '/performance',
+    component: PerformanceManage,
+    meta: { title: '绩效考核', icon: TrophyBase, permission: 'menu:performance' }
   },
   {
     path: '/statistics',

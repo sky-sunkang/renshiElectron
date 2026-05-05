@@ -178,6 +178,42 @@ app.whenReady().then(() => {
   ipcMain.handle('attendance:getToday', (_, employeeId) => db.getTodayAttendance(employeeId))
   ipcMain.handle('attendance:getStats', (_, employeeId, month) => db.getAttendanceStats(employeeId, month))
 
+  // Recruitment - Positions
+  ipcMain.handle('position:getAll', (_, options) => db.getPositions(options))
+  ipcMain.handle('position:getById', (_, id) => db.getPositionById(id))
+  ipcMain.handle('position:add', (_, data, operator) => db.addPosition(data, operator))
+  ipcMain.handle('position:update', (_, id, data, operator) => db.updatePosition(id, data, operator))
+  ipcMain.handle('position:delete', (_, id, operator) => db.deletePosition(id, operator))
+
+  // Recruitment - Candidates
+  ipcMain.handle('candidate:getAll', (_, options) => db.getCandidates(options))
+  ipcMain.handle('candidate:getById', (_, id) => db.getCandidateById(id))
+  ipcMain.handle('candidate:add', (_, data, operator) => db.addCandidate(data, operator))
+  ipcMain.handle('candidate:update', (_, id, data, operator) => db.updateCandidate(id, data, operator))
+  ipcMain.handle('candidate:delete', (_, id, operator) => db.deleteCandidate(id, operator))
+
+  // Recruitment - Interviews
+  ipcMain.handle('interview:getAll', (_, options) => db.getInterviews(options))
+  ipcMain.handle('interview:add', (_, data, operator) => db.addInterview(data, operator))
+  ipcMain.handle('interview:update', (_, id, data, operator) => db.updateInterview(id, data, operator))
+  ipcMain.handle('interview:delete', (_, id, operator) => db.deleteInterview(id, operator))
+
+  // Performance - Indicators
+  ipcMain.handle('indicator:getAll', (_, options) => db.getIndicators(options))
+  ipcMain.handle('indicator:getById', (_, id) => db.getIndicatorById(id))
+  ipcMain.handle('indicator:add', (_, data, operator) => db.addIndicator(data, operator))
+  ipcMain.handle('indicator:update', (_, id, data, operator) => db.updateIndicator(id, data, operator))
+  ipcMain.handle('indicator:delete', (_, id, operator) => db.deleteIndicator(id, operator))
+
+  // Performance - Assessments
+  ipcMain.handle('assessment:getAll', (_, options) => db.getAssessments(options))
+  ipcMain.handle('assessment:getById', (_, id) => db.getAssessmentById(id))
+  ipcMain.handle('assessment:add', (_, data, operator) => db.addAssessment(data, operator))
+  ipcMain.handle('assessment:update', (_, id, data, operator) => db.updateAssessment(id, data, operator))
+  ipcMain.handle('assessment:delete', (_, id, operator) => db.deleteAssessment(id, operator))
+  ipcMain.handle('assessment:getDetails', (_, assessmentId) => db.getAssessmentDetails(assessmentId))
+  ipcMain.handle('assessment:saveDetails', (_, assessmentId, details, operator) => db.saveAssessmentDetails(assessmentId, details, operator))
+
   createWindow()
 
   app.on('activate', () => {
