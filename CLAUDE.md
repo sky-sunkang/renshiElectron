@@ -38,6 +38,9 @@
 │   │       ├── announcement.js  # 公告模块：公告增删改查
 │   │       ├── contract.js      # 合同模块：合同增删改查、到期提醒
 │   │       ├── attendance.js    # 考勤模块：考勤记录管理、打卡
+│   │       ├── recruitment.js   # 招聘模块：岗位、候选人、面试管理
+│   │       ├── performance.js   # 绩效模块：考核指标、考核记录、评分
+│   │       ├── salary.js        # 薪资模块：工资条、调薪记录、薪资统计
 │   │       └── comments.js      # 表和字段注释：用于数据库管理页面显示
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
@@ -67,10 +70,14 @@
 │   │   │   ├── AnnouncementManage.vue # 公告管理（富文本编辑器）
 │   │   │   ├── DataImportExport.vue  # 数据导入导出（Excel 导入导出）
 │   │   │   ├── ContractManage.vue    # 合同管理（合同信息管理、到期提醒）
-│   │   │   └── AttendanceManage.vue  # 考勤管理（签到签退、考勤记录）
+│   │   │   ├── AttendanceManage.vue  # 考勤管理（签到签退、考勤记录）
+│   │   │   ├── RecruitmentManage.vue # 招聘管理（岗位发布、候选人管理、面试安排）
+│   │   │   ├── PerformanceManage.vue # 绩效考核（考核指标、考核记录、评分）
+│   │   │   └── SalaryManage.vue      # 薪资管理（工资条、调薪记录、薪资统计）
 │   │   └── components/          # 公共组件
 │   │       ├── Auth.vue             # 权限控制组件
-│   │       └── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
+│   │       ├── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
+│   │       └── DeptSelector.vue     # 部门选择器组件（支持搜索、树形展示）
 ├── vite.main.config.js          # 主进程构建配置（CJS）
 ├── vite.preload.config.js       # 预加载脚本构建配置（CJS）
 ├── vite.renderer.config.mjs     # 渲染进程构建配置（Vue + 按需引入）
@@ -120,6 +127,9 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `announcement.js` — 公告 CRUD、操作日志记录
 - `contract.js` — 合同 CRUD、到期提醒、操作日志记录
 - `attendance.js` — 考勤 CRUD、打卡、操作日志记录
+- `recruitment.js` — 招聘 CRUD（岗位、候选人、面试）、操作日志记录
+- `performance.js` — 绩效 CRUD（考核指标、考核记录、评分）、操作日志记录
+- `salary.js` — 薪资 CRUD（工资条、调薪记录）、薪资统计、操作日志记录
 - `comments.js` — 表和字段注释（数据库管理页面显示）
 
 **表结构：**
@@ -135,6 +145,14 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `announcements`：id, title, content, type, status, publisher_id, publisher_name, publish_time, expire_time, is_deleted, created_by, created_at, updated_by, updated_at
 - `contracts`：id, employee_id, contract_no, contract_type, start_date, end_date, sign_date, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
 - `attendance`：id, employee_id, type, check_time, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `positions`：id, title, department_id, department_name, salary_range, requirements, description, status, headcount, is_deleted, created_by, created_at, updated_by, updated_at
+- `candidates`：id, position_id, name, phone, email, resume, source, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `interviews`：id, candidate_id, interviewer_id, interview_time, location, round, type, status, result, feedback, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `performance_indicators`：id, name, category, description, max_score, weight, sort, is_deleted, created_by, created_at, updated_by, updated_at
+- `assessments`：id, employee_id, period, total_score, level, remark, status, is_deleted, created_by, created_at, updated_by, updated_at
+- `assessment_details`：id, assessment_id, indicator_id, score, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `salary_sheets`：id, employee_id, month, base_salary, overtime_pay, bonus, allowance, deduction, tax, insurance, actual_salary, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `salary_adjustments`：id, employee_id, type, before_salary, adjust_amount, after_salary, effective_date, reason, remark, is_deleted, created_by, created_at, updated_by, updated_at
 
 **初始化数据：**
 - 21 个部门，3 层级结构
@@ -144,6 +162,14 @@ npm run electron:build    # 构建并打包 Electron 应用
 - 合同类型字典：劳动合同、实习合同、外包合同
 - 合同状态字典：生效中、已过期、已终止
 - 考勤类型字典：签到、签退
+- 岗位状态字典：招聘中、已关闭、已暂停
+- 候选人状态字典：待筛选、面试中、已通过、已拒绝、已入职
+- 面试状态字典：待面试、进行中、已完成、已取消
+- 面试类型字典：现场面试、电话面试、视频面试
+- 考核等级字典：优秀、良好、合格、待改进、不合格
+- 指标类别字典：工作业绩、工作态度、工作能力、团队协作
+- 工资条状态字典：草稿、已发布、已发放
+- 调薪类型字典：涨薪、降薪、转正调薪、晋升调薪
 
 **系统角色：**
 | 角色代码 | 角色名称 | 默认用户 |
@@ -162,12 +188,15 @@ npm run electron:build    # 构建并打包 Electron 应用
 - 部门管理（menu:department）
 - 合同管理（menu:contract）
 - 考勤管理（menu:attendance）
+- 招聘管理（menu:recruitment）
+- 绩效考核（menu:performance）
+- 薪资管理（menu:salary）
 - 统计管理（menu:statistics）
   - 员工统计（menu:statistics:employee）
   - 操作统计（menu:statistics:log）
-- 公告管理（menu:announcement）
-- 数据导入导出（menu:import-export）
 - 系统管理（menu:system）
+  - 公告管理（menu:announcement）
+  - 数据导入导出（menu:import-export）
   - 字典管理（menu:dictionary）
   - 角色管理（menu:role）
   - 权限管理（menu:permission）
@@ -178,15 +207,15 @@ npm run electron:build    # 构建并打包 Electron 应用
 | 角色 | 菜单权限 |
 |------|----------|
 | 超级管理员 | 所有权限 |
-| 管理员 | 员工管理、部门管理、合同管理、考勤管理、统计管理、公告管理、数据导入导出、系统管理（字典管理） |
-| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、统计管理、公告管理、数据导入导出、系统管理（操作日志） |
-| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、公告管理（仅查看和打卡） |
+| 管理员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、字典管理） |
+| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、操作日志） |
+| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、系统管理（公告管理，仅查看和打卡） |
 
 ## 界面布局
 
 - **自定义标题栏**：`frame: false`，无边框窗口，顶部可拖拽区域 + 最小化/最大化/关闭按钮
-- **左侧侧边栏**：220px，深色背景，el-menu 导航，支持多级子菜单
-- **右侧主内容区**：白色顶部栏（页面标题 + 用户信息 + 修改密码/退出）+  底部内容区（如果是左右结构的布局，各自占满内容区域高度，高度超出各自滚动）
+- **左侧侧边栏**：220px，深色背景，el-menu 导航，支持多级子菜单，默认展开所有分类
+- **右侧主内容区**：白色顶部栏（页面标题 + 用户信息 + 刷新/修改密码/退出）+  底部内容区（如果是左右结构的布局，各自占满内容区域高度，高度超出各自滚动）
 - **字典管理**：左侧字典类型列表，右侧字典项列表，其他模块有需要
 - **中文界面**：Element Plus 使用 `zhCn` locale，分页等组件显示中文
 - **登录页面**：账号密码登录 + 验证码，未登录自动跳转到登录页
@@ -212,3 +241,5 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **操作日志记录**：所有系统操作需要增加操作日志，日志格式：`用户名 时间 操作类型 操作对象 详情`
 - **初始化脚本**：所有表结构创建和种子数据初始化集中在 `init.js` 文件中，初始化时检查数据是否已存在（包括已删除的记录），避免重复插入
 - **表和字段注释**：所有表和字段的中文注释维护在 `src/main/db/comments.js` 文件中，每次新增或修改表结构时，必须同步更新 `comments.js` 中的 `tableComments` 和 `fieldComments` 对象，以便在数据库管理页面正确显示注释信息
+- **分页默认条数**：所有列表分页默认显示 10 条数据
+- **选择器组件**：选择员工或部门时，使用 `EmployeeSelector` 或 `DeptSelector` 组件，支持搜索和多选
