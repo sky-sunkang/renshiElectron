@@ -11,7 +11,9 @@ import OperationLog from '../views/OperationLog.vue'
 import DatabaseManage from '../views/DatabaseManage.vue'
 import AnnouncementManage from '../views/AnnouncementManage.vue'
 import DataImportExport from '../views/DataImportExport.vue'
-import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download } from '@element-plus/icons-vue'
+import ContractManage from '../views/ContractManage.vue'
+import AttendanceManage from '../views/AttendanceManage.vue'
+import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock } from '@element-plus/icons-vue'
 
 const routes = [
   {
@@ -29,6 +31,16 @@ const routes = [
     path: '/department',
     component: DepartmentManage,
     meta: { title: '部门管理', icon: OfficeBuilding, permission: 'menu:department' }
+  },
+  {
+    path: '/contract',
+    component: ContractManage,
+    meta: { title: '合同管理', icon: Tickets, permission: 'menu:contract' }
+  },
+  {
+    path: '/attendance',
+    component: AttendanceManage,
+    meta: { title: '考勤管理', icon: Clock, permission: 'menu:attendance' }
   },
   {
     path: '/statistics',

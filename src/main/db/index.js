@@ -13,6 +13,8 @@ const log = require('./log')
 const init = require('./init')
 const comments = require('./comments')
 const announcement = require('./announcement')
+const contract = require('./contract')
+const attendance = require('./attendance')
 
 /**
  * 初始化数据库
@@ -247,6 +249,20 @@ module.exports = {
   updateAnnouncement: announcement.updateAnnouncement,
   deleteAnnouncement: announcement.deleteAnnouncement,
   getActiveAnnouncements: announcement.getActiveAnnouncements,
+  // 合同模块
+  getContracts: contract.getContracts,
+  getContractById: contract.getContractById,
+  addContract: contract.addContract,
+  updateContract: contract.updateContract,
+  deleteContract: contract.deleteContract,
+  getExpiringContracts: contract.getExpiringContracts,
+  // 考勤模块
+  getAttendance: attendance.getAttendance,
+  addAttendance: attendance.addAttendance,
+  updateAttendance: attendance.updateAttendance,
+  deleteAttendance: attendance.deleteAttendance,
+  getTodayAttendance: attendance.getTodayAttendance,
+  getAttendanceStats: attendance.getAttendanceStats,
   // 数据库管理
   getTables,
   getTableSchema,

@@ -478,6 +478,62 @@ function initDictSeedData() {
     itemStmt.free()
     console.log('[DB] position dictionary seeded')
   }
+
+  // 初始化合同类型字典
+  const contractTypeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'contract_type' AND is_deleted = 0")
+  contractTypeCheckStmt.step()
+  const contractTypeCount = Number(contractTypeCheckStmt.getAsObject().c)
+  contractTypeCheckStmt.free()
+
+  if (contractTypeCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['contract_type', '合同类型', '合同类型选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['contract_type', '劳动合同', 'labor', 1])
+    itemStmt.run(['contract_type', '实习合同', 'intern', 2])
+    itemStmt.run(['contract_type', '外包合同', 'outsource', 3])
+    itemStmt.free()
+    console.log('[DB] contract_type dictionary seeded')
+  }
+
+  // 初始化合同状态字典
+  const contractStatusCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'contract_status' AND is_deleted = 0")
+  contractStatusCheckStmt.step()
+  const contractStatusCount = Number(contractStatusCheckStmt.getAsObject().c)
+  contractStatusCheckStmt.free()
+
+  if (contractStatusCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['contract_status', '合同状态', '合同状态选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['contract_status', '生效中', 'active', 1])
+    itemStmt.run(['contract_status', '已过期', 'expired', 2])
+    itemStmt.run(['contract_status', '已终止', 'terminated', 3])
+    itemStmt.free()
+    console.log('[DB] contract_status dictionary seeded')
+  }
+
+  // 初始化考勤类型字典
+  const attendanceTypeCheckStmt = db.prepare("SELECT COUNT(*) as c FROM dict_types WHERE code = 'attendance_type' AND is_deleted = 0")
+  attendanceTypeCheckStmt.step()
+  const attendanceTypeCount = Number(attendanceTypeCheckStmt.getAsObject().c)
+  attendanceTypeCheckStmt.free()
+
+  if (attendanceTypeCount === 0) {
+    const typeStmt = db.prepare('INSERT INTO dict_types (code, name, description, is_deleted) VALUES (?, ?, ?, 0)')
+    typeStmt.run(['attendance_type', '考勤类型', '考勤类型选项'])
+    typeStmt.free()
+
+    const itemStmt = db.prepare('INSERT INTO dict_items (type_code, label, value, sort, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    itemStmt.run(['attendance_type', '签到', 'check_in', 1])
+    itemStmt.run(['attendance_type', '签退', 'check_out', 2])
+    itemStmt.free()
+    console.log('[DB] attendance_type dictionary seeded')
+  }
 }
 
 // ==================== 权限初始化 ====================
@@ -698,7 +754,25 @@ function initPermissionSeedData() {
     // 公告管理按钮权限
     { code: 'announcement:add', name: '发布公告', type: 'button', description: '发布公告按钮' },
     { code: 'announcement:edit', name: '编辑公告', type: 'button', description: '编辑公告按钮' },
-    { code: 'announcement:delete', name: '删除公告', type: 'button', description: '删除公告按钮' }
+    { code: 'announcement:delete', name: '删除公告', type: 'button', description: '删除公告按钮' },
+    // 数据导入导出按钮权限
+    { code: 'import-export:emp:import', name: '导入员工', type: 'button', description: '导入员工数据按钮' },
+    { code: 'import-export:emp:export', name: '导出员工', type: 'button', description: '导出员工数据按钮' },
+    { code: 'import-export:log:export', name: '导出日志', type: 'button', description: '导出操作日志按钮' },
+    // 合同管理菜单权限
+    { code: 'menu:contract', name: '合同管理菜单', type: 'menu', description: '访问合同管理页面' },
+    // 合同管理按钮权限
+    { code: 'contract:add', name: '新增合同', type: 'button', description: '新增合同按钮' },
+    { code: 'contract:edit', name: '编辑合同', type: 'button', description: '编辑合同按钮' },
+    { code: 'contract:delete', name: '删除合同', type: 'button', description: '删除合同按钮' },
+    { code: 'contract:export', name: '导出合同', type: 'button', description: '导出合同数据按钮' },
+    // 考勤管理菜单权限
+    { code: 'menu:attendance', name: '考勤管理菜单', type: 'menu', description: '访问考勤管理页面' },
+    // 考勤管理按钮权限
+    { code: 'attendance:check', name: '打卡', type: 'button', description: '签到签退按钮' },
+    { code: 'attendance:edit', name: '编辑考勤', type: 'button', description: '编辑考勤记录按钮' },
+    { code: 'attendance:delete', name: '删除考勤', type: 'button', description: '删除考勤记录按钮' },
+    { code: 'attendance:export', name: '导出考勤', type: 'button', description: '导出考勤数据按钮' }
   ]
 
   // 使用 INSERT OR IGNORE 防止重复插入（code字段有UNIQUE约束）
@@ -771,10 +845,15 @@ function assignPermissionsToRoles() {
 
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:system', 'menu:dictionary',
-    'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:dictionary',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export',
+    'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
-    'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete'
+    'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete',
+    'contract:add', 'contract:edit', 'contract:delete', 'contract:export',
+    'attendance:check', 'attendance:edit', 'attendance:delete', 'attendance:export',
+    'announcement:add', 'announcement:edit', 'announcement:delete',
+    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export'
   ]
   const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   adminPermissions.forEach(code => adminStmt.run([adminId, code]))
@@ -783,16 +862,23 @@ function assignPermissionsToRoles() {
   // 人事专员权限
   const hrPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:system', 'menu:log',
-    'emp:add', 'emp:edit', 'emp:export',
-    'dept:add', 'dept:edit'
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export',
+    'emp:add', 'emp:edit', 'emp:export', 'emp:import',
+    'dept:add', 'dept:edit',
+    'contract:add', 'contract:edit', 'contract:export',
+    'attendance:check', 'attendance:edit', 'attendance:export',
+    'announcement:add', 'announcement:edit', 'announcement:delete',
+    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export'
   ]
   const hrStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   hrPermissions.forEach(code => hrStmt.run([hrId, code]))
   hrStmt.free()
 
-  // 普通用户权限（仅查看）
+  // 普通用户权限（仅查看和打卡）
   const userPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log'
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log',
+    'menu:attendance', 'menu:announcement',
+    'attendance:check'
   ]
   const userStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   userPermissions.forEach(code => userStmt.run([userId, code]))
@@ -1010,6 +1096,60 @@ function initAnnouncementTables() {
   console.log('[DB] announcements table initialized')
 }
 
+/**
+ * 初始化合同表结构
+ */
+function initContractTables() {
+  const db = getDb()
+
+  // 创建合同表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS contracts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      contract_no TEXT,
+      contract_type TEXT DEFAULT 'labor',
+      start_date INTEGER,
+      end_date INTEGER,
+      sign_date INTEGER,
+      status TEXT DEFAULT 'active',
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] contracts table initialized')
+}
+
+/**
+ * 初始化考勤表结构
+ */
+function initAttendanceTables() {
+  const db = getDb()
+
+  // 创建考勤表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS attendance (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'check_in',
+      check_time INTEGER,
+      remark TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] attendance table initialized')
+}
+
 // ==================== 统一初始化入口 ====================
 
 /**
@@ -1022,6 +1162,8 @@ function initAllTables() {
   initPermissionTables()
   initOperationLogTables()
   initAnnouncementTables()
+  initContractTables()
+  initAttendanceTables()
 }
 
 /**

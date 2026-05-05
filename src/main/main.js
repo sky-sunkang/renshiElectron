@@ -162,6 +162,22 @@ app.whenReady().then(() => {
   ipcMain.handle('announcement:delete', (_, id, operator) => db.deleteAnnouncement(id, operator))
   ipcMain.handle('announcement:getActive', (_, limit) => db.getActiveAnnouncements(limit))
 
+  // Contracts
+  ipcMain.handle('contract:getAll', (_, options) => db.getContracts(options))
+  ipcMain.handle('contract:getById', (_, id) => db.getContractById(id))
+  ipcMain.handle('contract:add', (_, data, operator) => db.addContract(data, operator))
+  ipcMain.handle('contract:update', (_, id, data, operator) => db.updateContract(id, data, operator))
+  ipcMain.handle('contract:delete', (_, id, operator) => db.deleteContract(id, operator))
+  ipcMain.handle('contract:getExpiring', (_, days) => db.getExpiringContracts(days))
+
+  // Attendance
+  ipcMain.handle('attendance:getAll', (_, options) => db.getAttendance(options))
+  ipcMain.handle('attendance:add', (_, data, operator) => db.addAttendance(data, operator))
+  ipcMain.handle('attendance:update', (_, id, data, operator) => db.updateAttendance(id, data, operator))
+  ipcMain.handle('attendance:delete', (_, id, operator) => db.deleteAttendance(id, operator))
+  ipcMain.handle('attendance:getToday', (_, employeeId) => db.getTodayAttendance(employeeId))
+  ipcMain.handle('attendance:getStats', (_, employeeId, month) => db.getAttendanceStats(employeeId, month))
+
   createWindow()
 
   app.on('activate', () => {

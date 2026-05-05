@@ -158,7 +158,11 @@ function getChildCount(child) {
 const moduleConfig = [
   { name: '员工管理', menuPrefix: 'menu:employee', actionPrefix: 'emp:' },
   { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
+  { name: '合同管理', menuPrefix: 'menu:contract', actionPrefix: 'contract:' },
+  { name: '考勤管理', menuPrefix: 'menu:attendance', actionPrefix: 'attendance:' },
   { name: '统计管理', menuPrefix: 'menu:statistics', actionPrefix: null },
+  { name: '公告管理', menuPrefix: 'menu:announcement', actionPrefix: 'announcement:' },
+  { name: '数据导入导出', menuPrefix: 'menu:import-export', actionPrefix: 'import-export:' },
   {
     name: '系统管理',
     menuPrefix: 'menu:system',

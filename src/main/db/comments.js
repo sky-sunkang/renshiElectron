@@ -20,7 +20,9 @@ const tableComments = {
   role_permissions: '角色权限关联表：配置角色拥有的权限',
   user_roles: '用户角色关联表：分配用户的角色',
   operation_logs: '操作日志表：记录用户操作历史',
-  announcements: '公告表：存储系统公告信息'
+  announcements: '公告表：存储系统公告信息',
+  contracts: '合同表：存储员工合同信息',
+  attendance: '考勤表：存储员工考勤打卡记录'
 }
 
 /**
@@ -149,6 +151,34 @@ const fieldComments = {
     publisher_name: '发布人名称',
     publish_time: '发布时间（Unix时间戳）',
     expire_time: '过期时间（Unix时间戳）',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
+  },
+  contracts: {
+    id: '主键，自增',
+    employee_id: '员工ID',
+    contract_no: '合同编号',
+    contract_type: '合同类型（labor-劳动合同，intern-实习合同，outsource-外包合同）',
+    start_date: '合同开始日期（Unix时间戳）',
+    end_date: '合同结束日期（Unix时间戳）',
+    sign_date: '签订日期（Unix时间戳）',
+    status: '合同状态（active-生效中，expired-已过期，terminated-已终止）',
+    remark: '备注',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
+  },
+  attendance: {
+    id: '主键，自增',
+    employee_id: '员工ID',
+    type: '考勤类型（check_in-签到，check_out-签退）',
+    check_time: '打卡时间（Unix时间戳）',
+    remark: '备注',
     is_deleted: '是否删除，0-未删除，1-已删除',
     created_by: '创建人ID',
     created_at: '创建时间（Unix时间戳）',

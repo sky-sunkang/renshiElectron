@@ -93,4 +93,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
     delete: (id, operator) => ipcRenderer.invoke('announcement:delete', id, operator),
     getActive: (limit) => ipcRenderer.invoke('announcement:getActive', limit),
   },
+  contract: {
+    getAll: (options) => ipcRenderer.invoke('contract:getAll', options),
+    getById: (id) => ipcRenderer.invoke('contract:getById', id),
+    add: (data, operator) => ipcRenderer.invoke('contract:add', data, operator),
+    update: (id, data, operator) => ipcRenderer.invoke('contract:update', id, data, operator),
+    delete: (id, operator) => ipcRenderer.invoke('contract:delete', id, operator),
+    getExpiring: (days) => ipcRenderer.invoke('contract:getExpiring', days),
+  },
+  attendance: {
+    getAll: (options) => ipcRenderer.invoke('attendance:getAll', options),
+    add: (data, operator) => ipcRenderer.invoke('attendance:add', data, operator),
+    update: (id, data, operator) => ipcRenderer.invoke('attendance:update', id, data, operator),
+    delete: (id, operator) => ipcRenderer.invoke('attendance:delete', id, operator),
+    getToday: (employeeId) => ipcRenderer.invoke('attendance:getToday', employeeId),
+    getStats: (employeeId, month) => ipcRenderer.invoke('attendance:getStats', employeeId, month),
+  },
 })
