@@ -41,7 +41,7 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
-import { UserFilled } from '@element-plus/icons-vue'
+import { UserFilled, HomeFilled } from '@element-plus/icons-vue'
 import { usePermissionStore } from '../stores/permission.js'
 import routerConfig from '../router/index.js'
 

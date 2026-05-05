@@ -246,23 +246,45 @@ function getAttendanceStats(employee_id, month) {
   const startTime = Math.floor(new Date(year, m - 1, 1).getTime() / 1000)
   const endTime = Math.floor(new Date(year, m, 1).getTime() / 1000)
 
+  // 获取该员工该月份的所有考勤记录
   const sql = `
-    SELECT type, COUNT(*) as count FROM attendance
+    SELECT id, type, check_time FROM attendance
     WHERE employee_id = ? AND is_deleted = 0
     AND check_time >= ? AND check_time < ?
-    GROUP BY type
+    ORDER BY check_time ASC
   `
   const stmt = db.prepare(sql)
   stmt.bind([employee_id, startTime, endTime])
-  const stats = { check_in: 0, check_out: 0 }
+  const records = []
   while (stmt.step()) {
-    const row = stmt.getAsObject()
-    if (row.type === 'check_in') stats.check_in = row.count
-    if (row.type === 'check_out') stats.check_out = row.count
+    records.push(stmt.getAsObject())
   }
   stmt.free()
 
-  return stats
+  // 按日期分组统计 - 使用普通对象
+  const checkInDaysObj = {}
+  const checkOutDaysObj = {}
+
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]
+    const date = new Date(record.check_time * 1000)
+    const dateKey = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+
+    if (record.type === 'check_in') {
+      checkInDaysObj[dateKey] = true
+    } else if (record.type === 'check_out') {
+      checkOutDaysObj[dateKey] = true
+    }
+  }
+
+  // 计算天数
+  const checkInDays = Object.keys(checkInDaysObj).length
+  const checkOutDays = Object.keys(checkOutDaysObj).length
+
+  return {
+    check_in: checkInDays,
+    check_out: checkOutDays
+  }
 }
 
 module.exports = {

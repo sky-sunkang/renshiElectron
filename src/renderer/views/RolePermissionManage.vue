@@ -136,6 +136,7 @@ const expandedModules = ref([]) // 默认展开所有模块
 
 // 权限模块定义
 const moduleConfig = [
+  { name: '工作台', menuPrefix: 'menu:dashboard', actionPrefix: null },
   { name: '员工管理', menuPrefix: 'menu:employee', actionPrefix: 'emp:' },
   { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
   { name: '合同管理', menuPrefix: 'menu:contract', actionPrefix: 'contract:' },

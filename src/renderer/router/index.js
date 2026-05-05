@@ -1,4 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import Dashboard from '../views/Dashboard.vue'
 import Login from '../views/Login.vue'
 import EmployeeManage from '../views/EmployeeManage.vue'
 import DepartmentManage from '../views/DepartmentManage.vue'
@@ -24,7 +25,12 @@ const routes = [
     component: Login,
     meta: { title: '登录', noAuth: true }
   },
-  { path: '/', redirect: '/employee' },
+  { path: '/', redirect: '/dashboard' },
+  {
+    path: '/dashboard',
+    component: Dashboard,
+    meta: { title: '工作台', icon: UserFilled }
+  },
   {
     path: '/employee',
     component: EmployeeManage,
@@ -133,9 +139,9 @@ router.beforeEach((to, _from, next) => {
 
   // 不需要登录的页面直接放行
   if (to.meta.noAuth) {
-    // 已登录用户访问登录页，跳转到首页
+    // 已登录用户访问登录页，跳转到工作台
     if (userStr && to.path === '/login') {
-      next('/statistics/employee')
+      next('/dashboard')
       return
     }
     next()
