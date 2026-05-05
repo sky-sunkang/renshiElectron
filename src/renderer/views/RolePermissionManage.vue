@@ -132,7 +132,55 @@ const roles = ref([])
 const currentRole = ref(null)
 const permissions = ref([])
 const selectedPermissions = ref([])
-const expandedModules = ref(['员工管理', '部门管理', '统计管理', '系统管理'])
+const expandedModules = ref([]) // 默认展开所有模块
+
+// 权限模块定义
+const moduleConfig = [
+  { name: '员工管理', menuPrefix: 'menu:employee', actionPrefix: 'emp:' },
+  { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
+  { name: '合同管理', menuPrefix: 'menu:contract', actionPrefix: 'contract:' },
+  { name: '考勤管理', menuPrefix: 'menu:attendance', actionPrefix: 'attendance:' },
+  { name: '招聘管理', menuPrefix: 'menu:recruitment', actionPrefix: 'position:' },
+  { name: '绩效考核', menuPrefix: 'menu:performance', actionPrefix: 'indicator:' },
+  { name: '薪资管理', menuPrefix: 'menu:salary', actionPrefix: 'salary:' },
+  {
+    name: '统计管理',
+    menuPrefix: 'menu:statistics',
+    actionPrefix: null,
+    children: [
+      { name: '员工统计', menuPrefix: 'menu:statistics:employee', actionPrefix: null },
+      { name: '操作统计', menuPrefix: 'menu:statistics:log', actionPrefix: null }
+    ]
+  },
+  {
+    name: '系统管理',
+    menuPrefix: 'menu:system',
+    actionPrefix: null,
+    children: [
+      { name: '公告管理', menuPrefix: 'menu:announcement', actionPrefix: 'announcement:' },
+      { name: '数据导入导出', menuPrefix: 'menu:import-export', actionPrefix: 'import-export:' },
+      { name: '字典管理', menuPrefix: 'menu:dictionary', actionPrefix: 'dict:' },
+      { name: '角色管理', menuPrefix: 'menu:role', actionPrefix: 'role:' },
+      { name: '权限管理', menuPrefix: 'menu:permission', actionPrefix: 'permission:' },
+      { name: '操作日志', menuPrefix: 'menu:log', actionPrefix: null },
+      { name: '数据库管理', menuPrefix: 'menu:database', actionPrefix: 'db:' }
+    ]
+  }
+]
+
+/**
+ * 获取所有模块名称（用于默认展开）
+ */
+function getAllModuleNames() {
+  const names = []
+  moduleConfig.forEach(m => {
+    names.push(m.name)
+    if (m.children) {
+      m.children.forEach(c => names.push(c.name))
+    }
+  })
+  return names
+}
 
 /**
  * 计算模块权限数量
@@ -153,32 +201,6 @@ function getModuleCount(module) {
 function getChildCount(child) {
   return child.menus.length + child.actions.length
 }
-
-// 权限模块定义
-const moduleConfig = [
-  { name: '员工管理', menuPrefix: 'menu:employee', actionPrefix: 'emp:' },
-  { name: '部门管理', menuPrefix: 'menu:department', actionPrefix: 'dept:' },
-  { name: '合同管理', menuPrefix: 'menu:contract', actionPrefix: 'contract:' },
-  { name: '考勤管理', menuPrefix: 'menu:attendance', actionPrefix: 'attendance:' },
-  { name: '招聘管理', menuPrefix: 'menu:recruitment', actionPrefix: 'position:' },
-  { name: '绩效考核', menuPrefix: 'menu:performance', actionPrefix: 'indicator:' },
-  { name: '薪资管理', menuPrefix: 'menu:salary', actionPrefix: 'salary:' },
-  { name: '统计管理', menuPrefix: 'menu:statistics', actionPrefix: null },
-  { name: '公告管理', menuPrefix: 'menu:announcement', actionPrefix: 'announcement:' },
-  { name: '数据导入导出', menuPrefix: 'menu:import-export', actionPrefix: 'import-export:' },
-  {
-    name: '系统管理',
-    menuPrefix: 'menu:system',
-    actionPrefix: null,
-    children: [
-      { name: '字典管理', menuPrefix: 'menu:dictionary', actionPrefix: 'dict:' },
-      { name: '角色管理', menuPrefix: 'menu:role', actionPrefix: 'role:' },
-      { name: '权限管理', menuPrefix: 'menu:permission', actionPrefix: 'permission:' },
-      { name: '操作日志', menuPrefix: 'menu:log', actionPrefix: null },
-      { name: '数据库管理', menuPrefix: 'menu:database', actionPrefix: 'db:' }
-    ]
-  }
-]
 
 /**
  * 获取单个模块的权限数据
@@ -235,6 +257,8 @@ async function handleRoleChange(row) {
   if (row) {
     const rolePerms = await window.electronAPI.perm.getRolePermissions(row.id)
     selectedPermissions.value = rolePerms
+    // 默认展开所有模块
+    expandedModules.value = getAllModuleNames()
   } else {
     selectedPermissions.value = []
   }
