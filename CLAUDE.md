@@ -41,6 +41,7 @@
 │   │       ├── recruitment.js   # 招聘模块：岗位、候选人、面试管理
 │   │       ├── performance.js   # 绩效模块：考核指标、考核记录、评分
 │   │       ├── salary.js        # 薪资模块：工资条、调薪记录、薪资统计
+│   │       ├── calendar.js      # 工作日历模块：工作日、节假日、调休日管理
 │   │       └── comments.js      # 表和字段注释：用于数据库管理页面显示
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
@@ -73,7 +74,8 @@
 │   │   │   ├── AttendanceManage.vue  # 考勤管理（签到签退、考勤记录）
 │   │   │   ├── RecruitmentManage.vue # 招聘管理（岗位发布、候选人管理、面试安排）
 │   │   │   ├── PerformanceManage.vue # 绩效考核（考核指标、考核记录、评分）
-│   │   │   └── SalaryManage.vue      # 薪资管理（工资条、调薪记录、薪资统计）
+│   │   │   ├── SalaryManage.vue      # 薪资管理（工资条、调薪记录、薪资统计）
+│   │   │   └── WorkCalendarManage.vue # 工作日历（工作日、节假日、调休日设置）
 │   │   └── components/          # 公共组件
 │   │       ├── Auth.vue             # 权限控制组件
 │   │       ├── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
@@ -130,6 +132,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `recruitment.js` — 招聘 CRUD（岗位、候选人、面试）、操作日志记录
 - `performance.js` — 绩效 CRUD（考核指标、考核记录、评分）、操作日志记录
 - `salary.js` — 薪资 CRUD（工资条、调薪记录）、薪资统计、操作日志记录
+- `calendar.js` — 工作日历管理（工作日、节假日、调休日）、操作日志记录
 - `comments.js` — 表和字段注释（数据库管理页面显示）
 
 **表结构：**
@@ -153,6 +156,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `assessment_details`：id, assessment_id, indicator_id, score, remark, is_deleted, created_by, created_at, updated_by, updated_at
 - `salary_sheets`：id, employee_id, month, base_salary, overtime_pay, bonus, allowance, deduction, tax, insurance, actual_salary, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
 - `salary_adjustments`：id, employee_id, type, before_salary, adjust_amount, after_salary, effective_date, reason, remark, is_deleted, created_by, created_at, updated_by, updated_at
+- `work_calendar`：id, date, date_str, type, name, is_deleted, created_by, created_at, updated_by, updated_at
 
 **初始化数据：**
 - 21 个部门，3 层级结构，每个部门有编码（如 HQ、TECH、TECH-FE 等）
@@ -194,6 +198,10 @@ npm run electron:build    # 构建并打包 Electron 应用
 - 统计管理（menu:statistics）
   - 员工统计（menu:statistics:employee）
   - 操作统计（menu:statistics:log）
+  - 考勤统计（menu:statistics:attendance）
+  - 绩效统计（menu:statistics:performance）
+  - 招聘统计（menu:statistics:recruitment）
+  - 合同统计（menu:statistics:contract）
 - 系统管理（menu:system）
   - 公告管理（menu:announcement）
   - 数据导入导出（menu:import-export）
@@ -201,15 +209,16 @@ npm run electron:build    # 构建并打包 Electron 应用
   - 角色管理（menu:role）
   - 权限管理（menu:permission）
   - 操作日志（menu:log）
+  - 工作日历（menu:calendar）
   - 数据库管理（menu:database）
 
 **角色权限分配：**
 | 角色 | 菜单权限 |
 |------|----------|
 | 超级管理员 | 所有权限 |
-| 管理员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、字典管理） |
-| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、操作日志） |
-| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、系统管理（公告管理，仅查看和打卡） |
+| 管理员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、字典管理、工作日历） |
+| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、操作日志、工作日历） |
+| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、系统管理（公告管理、工作日历，仅查看和打卡） |
 
 ## 界面布局
 

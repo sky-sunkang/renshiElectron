@@ -18,6 +18,7 @@ const attendance = require('./attendance')
 const recruitment = require('./recruitment')
 const performance = require('./performance')
 const salary = require('./salary')
+const calendar = require('./calendar')
 
 /**
  * 初始化数据库
@@ -312,6 +313,13 @@ module.exports = {
   deleteSalaryAdjustment: salary.deleteSalaryAdjustment,
   // 薪资模块 - 薪资统计
   getSalaryStatistics: salary.getSalaryStatistics,
+  // 工作日历模块
+  initYearCalendar: calendar.initYearCalendar,
+  getMonthCalendar: calendar.getMonthCalendar,
+  getYearCalendar: calendar.getYearCalendar,
+  setDayType: calendar.setDayType,
+  batchSetDays: calendar.batchSetDays,
+  getWorkDays: calendar.getWorkDays,
   // 数据库管理
   getTables,
   getTableSchema,

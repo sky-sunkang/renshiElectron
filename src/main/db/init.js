@@ -883,6 +883,9 @@ function initPermissionSeedData() {
     { code: 'menu:database', name: '数据库管理菜单', type: 'menu', description: '访问数据库管理页面' },
     { code: 'menu:announcement', name: '公告管理菜单', type: 'menu', description: '访问公告管理页面' },
     { code: 'menu:import-export', name: '数据导入导出菜单', type: 'menu', description: '访问数据导入导出页面' },
+    { code: 'menu:calendar', name: '工作日历菜单', type: 'menu', description: '访问工作日历页面' },
+    // 工作日历按钮权限
+    { code: 'calendar:edit', name: '编辑日历', type: 'button', description: '编辑工作日历按钮' },
     // 员工管理按钮权限
     { code: 'emp:add', name: '新增员工', type: 'button', description: '新增员工按钮' },
     { code: 'emp:edit', name: '编辑员工', type: 'button', description: '编辑员工按钮' },
@@ -1041,7 +1044,7 @@ function assignPermissionsToRoles() {
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:dictionary',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary', 'menu:calendar',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
     'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete',
@@ -1055,7 +1058,8 @@ function assignPermissionsToRoles() {
     'indicator:add', 'indicator:edit', 'indicator:delete',
     'assessment:add', 'assessment:edit', 'assessment:delete', 'assessment:score',
     'salary:add', 'salary:edit', 'salary:delete', 'salary:generate', 'salary:export',
-    'adjustment:add', 'adjustment:delete'
+    'adjustment:add', 'adjustment:delete',
+    'calendar:edit'
   ]
   const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   adminPermissions.forEach(code => adminStmt.run([adminId, code]))
@@ -1064,7 +1068,7 @@ function assignPermissionsToRoles() {
   // 人事专员权限
   const hrPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:log',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
+    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary', 'menu:calendar',
     'emp:add', 'emp:edit', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit',
     'contract:add', 'contract:edit', 'contract:export',
@@ -1077,7 +1081,8 @@ function assignPermissionsToRoles() {
     'indicator:add', 'indicator:edit',
     'assessment:add', 'assessment:edit', 'assessment:score',
     'salary:add', 'salary:edit', 'salary:generate', 'salary:export',
-    'adjustment:add'
+    'adjustment:add',
+    'calendar:edit'
   ]
   const hrStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
   hrPermissions.forEach(code => hrStmt.run([hrId, code]))
@@ -1086,7 +1091,7 @@ function assignPermissionsToRoles() {
   // 普通用户权限（仅查看和打卡）
   const userPermissions = [
     'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract',
-    'menu:attendance', 'menu:announcement',
+    'menu:attendance', 'menu:announcement', 'menu:calendar',
     'attendance:check'
   ]
   const userStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
@@ -1544,6 +1549,31 @@ function initSalaryTables() {
   console.log('[DB] salary tables initialized')
 }
 
+/**
+ * 初始化工作日历表结构
+ */
+function initCalendarTables() {
+  const db = getDb()
+
+  // 创建工作日历表
+  db.run(`
+    CREATE TABLE IF NOT EXISTS work_calendar (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      date INTEGER NOT NULL,
+      date_str TEXT NOT NULL UNIQUE,
+      type TEXT DEFAULT 'workday',
+      name TEXT,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch()),
+      updated_by INTEGER,
+      updated_at INTEGER
+    )
+  `)
+
+  console.log('[DB] work_calendar table initialized')
+}
+
 // ==================== 统一初始化入口 ====================
 
 /**
@@ -1561,6 +1591,7 @@ function initAllTables() {
   initRecruitmentTables()
   initPerformanceTables()
   initSalaryTables()
+  initCalendarTables()
 }
 
 /**

@@ -231,6 +231,14 @@ app.whenReady().then(() => {
   // Salary - Statistics
   ipcMain.handle('salaryStatistics:get', (_, options) => db.getSalaryStatistics(options))
 
+  // Calendar
+  ipcMain.handle('calendar:initYear', (_, year, operator) => db.initYearCalendar(year, operator))
+  ipcMain.handle('calendar:getMonth', (_, year, month) => db.getMonthCalendar(year, month))
+  ipcMain.handle('calendar:getYear', (_, year) => db.getYearCalendar(year))
+  ipcMain.handle('calendar:setDayType', (_, dateStr, type, name, operator) => db.setDayType(dateStr, type, name, operator))
+  ipcMain.handle('calendar:batchSet', (_, days, operator) => db.batchSetDays(days, operator))
+  ipcMain.handle('calendar:getWorkDays', (_, year, month) => db.getWorkDays(year, month))
+
   createWindow()
 
   app.on('activate', () => {

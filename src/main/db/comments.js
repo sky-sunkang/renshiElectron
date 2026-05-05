@@ -30,7 +30,8 @@ const tableComments = {
   assessments: '考核记录表：存储员工绩效考核记录',
   assessment_details: '考核评分明细表：存储考核评分详情',
   salary_sheets: '工资条表：存储员工工资条信息',
-  salary_adjustments: '调薪记录表：存储员工调薪记录'
+  salary_adjustments: '调薪记录表：存储员工调薪记录',
+  work_calendar: '工作日历表：存储工作日、节假日、调休日配置'
 }
 
 /**
@@ -313,6 +314,18 @@ const fieldComments = {
     effective_date: '生效日期（Unix时间戳）',
     reason: '调薪原因',
     remark: '备注',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）',
+    updated_by: '修改人ID',
+    updated_at: '修改时间（Unix时间戳）'
+  },
+  work_calendar: {
+    id: '主键，自增',
+    date: '日期时间戳（当天0点）',
+    date_str: '日期字符串 YYYY-MM-DD',
+    type: '日期类型（workday-工作日，holiday-节假日，adjustment-调休日）',
+    name: '节假日名称（如：春节、国庆节）',
     is_deleted: '是否删除，0-未删除，1-已删除',
     created_by: '创建人ID',
     created_at: '创建时间（Unix时间戳）',

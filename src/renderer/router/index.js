@@ -21,6 +21,7 @@ import AttendanceManage from '../views/AttendanceManage.vue'
 import RecruitmentManage from '../views/RecruitmentManage.vue'
 import PerformanceManage from '../views/PerformanceManage.vue'
 import SalaryManage from '../views/SalaryManage.vue'
+import WorkCalendarManage from '../views/WorkCalendarManage.vue'
 import { User, OfficeBuilding, TrendCharts, CollectionTag, Lock, UserFilled, Document, Grid, Setting, DataAnalysis, Histogram, Bell, Download, Tickets, Clock, Briefcase, TrophyBase, Money, Calendar, Medal } from '@element-plus/icons-vue'
 
 const routes = [
@@ -139,6 +140,11 @@ const routes = [
         path: '/operation-log',
         component: OperationLog,
         meta: { title: '操作日志', icon: Document, permission: 'menu:log' }
+      },
+      {
+        path: '/work-calendar',
+        component: WorkCalendarManage,
+        meta: { title: '工作日历', icon: Calendar, permission: 'menu:calendar' }
       },
       {
         path: '/database',

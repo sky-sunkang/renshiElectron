@@ -137,19 +137,24 @@ let trendChart = null
 let deptChart = null
 
 /**
- * 获取月份的工作日天数（简化计算，排除周末）
+ * 获取月份的工作日天数（从工作日历获取）
  */
-function getWorkDays(year, month) {
-  const daysInMonth = new Date(year, month, 0).getDate()
-  let workDays = 0
-  for (let d = 1; d <= daysInMonth; d++) {
-    const date = new Date(year, month - 1, d)
-    const dayOfWeek = date.getDay()
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      workDays++
+async function getWorkDays(year, month) {
+  try {
+    return await window.electronAPI.calendar.getWorkDays(year, month)
+  } catch (e) {
+    // 如果获取失败，使用默认计算（排除周末）
+    const daysInMonth = new Date(year, month, 0).getDate()
+    let workDays = 0
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month - 1, d)
+      const dayOfWeek = date.getDay()
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        workDays++
+      }
     }
+    return workDays
   }
-  return workDays
 }
 
 /**
@@ -186,7 +191,7 @@ async function loadData() {
     const month = monthDate.getMonth() + 1
     const monthStart = new Date(year, month - 1, 1).getTime() / 1000
     const monthEnd = new Date(year, month, 1).getTime() / 1000
-    const workDays = getWorkDays(year, month)
+    const workDays = await getWorkDays(year, month)
 
     const monthRecords = allAttendance.list.filter(r => r.check_time >= monthStart && r.check_time < monthEnd)
 

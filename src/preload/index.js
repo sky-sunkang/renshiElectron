@@ -165,4 +165,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   salaryStatistics: {
     get: (options) => ipcRenderer.invoke('salaryStatistics:get', options),
   },
+  calendar: {
+    initYear: (year, operator) => ipcRenderer.invoke('calendar:initYear', year, operator),
+    getMonth: (year, month) => ipcRenderer.invoke('calendar:getMonth', year, month),
+    getYear: (year) => ipcRenderer.invoke('calendar:getYear', year),
+    setDayType: (dateStr, type, name, operator) => ipcRenderer.invoke('calendar:setDayType', dateStr, type, name, operator),
+    batchSet: (days, operator) => ipcRenderer.invoke('calendar:batchSet', days, operator),
+    getWorkDays: (year, month) => ipcRenderer.invoke('calendar:getWorkDays', year, month),
+  },
 })

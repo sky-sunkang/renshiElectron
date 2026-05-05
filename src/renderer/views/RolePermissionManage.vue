@@ -168,6 +168,7 @@ const moduleConfig = [
       { name: '角色管理', menuPrefix: 'menu:role', actionPrefix: 'role:' },
       { name: '权限管理', menuPrefix: 'menu:permission', actionPrefix: 'permission:' },
       { name: '操作日志', menuPrefix: 'menu:log', actionPrefix: null },
+      { name: '工作日历', menuPrefix: 'menu:calendar', actionPrefix: 'calendar:' },
       { name: '数据库管理', menuPrefix: 'menu:database', actionPrefix: 'db:' }
     ]
   }
