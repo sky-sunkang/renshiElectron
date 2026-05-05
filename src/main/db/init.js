@@ -872,6 +872,9 @@ function initPermissionSeedData() {
     { code: 'menu:statistics:employee', name: '员工统计菜单', type: 'menu', description: '访问员工统计页面' },
     { code: 'menu:statistics:log', name: '操作统计菜单', type: 'menu', description: '访问操作统计页面' },
     { code: 'menu:statistics:attendance', name: '考勤统计菜单', type: 'menu', description: '访问考勤统计页面' },
+    { code: 'menu:statistics:performance', name: '绩效统计菜单', type: 'menu', description: '访问绩效统计页面' },
+    { code: 'menu:statistics:recruitment', name: '招聘统计菜单', type: 'menu', description: '访问招聘统计页面' },
+    { code: 'menu:statistics:contract', name: '合同统计菜单', type: 'menu', description: '访问合同统计页面' },
     { code: 'menu:system', name: '系统管理菜单', type: 'menu', description: '访问系统管理页面' },
     { code: 'menu:dictionary', name: '字典管理菜单', type: 'menu', description: '访问字典管理页面' },
     { code: 'menu:role', name: '角色管理菜单', type: 'menu', description: '访问角色管理页面' },
@@ -1037,7 +1040,7 @@ function assignPermissionsToRoles() {
 
   // 管理员权限（除角色管理和数据库管理外）
   const adminPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:system', 'menu:dictionary',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:dictionary',
     'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
     'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
@@ -1060,7 +1063,7 @@ function assignPermissionsToRoles() {
 
   // 人事专员权限
   const hrPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:system', 'menu:log',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:log',
     'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary',
     'emp:add', 'emp:edit', 'emp:export', 'emp:import',
     'dept:add', 'dept:edit',
@@ -1082,7 +1085,7 @@ function assignPermissionsToRoles() {
 
   // 普通用户权限（仅查看和打卡）
   const userPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance',
+    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract',
     'menu:attendance', 'menu:announcement',
     'attendance:check'
   ]

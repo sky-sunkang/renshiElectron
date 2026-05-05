@@ -151,7 +151,10 @@ const moduleConfig = [
     children: [
       { name: '员工统计', menuPrefix: 'menu:statistics:employee', actionPrefix: null },
       { name: '操作统计', menuPrefix: 'menu:statistics:log', actionPrefix: null },
-      { name: '考勤统计', menuPrefix: 'menu:statistics:attendance', actionPrefix: null }
+      { name: '考勤统计', menuPrefix: 'menu:statistics:attendance', actionPrefix: null },
+      { name: '绩效统计', menuPrefix: 'menu:statistics:performance', actionPrefix: null },
+      { name: '招聘统计', menuPrefix: 'menu:statistics:recruitment', actionPrefix: null },
+      { name: '合同统计', menuPrefix: 'menu:statistics:contract', actionPrefix: null }
     ]
   },
   {
