@@ -391,7 +391,14 @@ async function save() {
     await load()
   } catch (error) {
     console.error('保存失败:', error)
-    ElMessage.error('保存失败: ' + (error.message || error))
+    // 提取实际的错误消息，去掉 IPC 包装信息
+    let msg = error.message || '保存失败'
+    // 处理 "Error invoking remote method 'xxx': Error: 实际消息" 格式
+    const match = msg.match(/Error:\s*(.+)$/)
+    if (match) {
+      msg = match[1].trim()
+    }
+    ElMessage.error(msg)
   }
 }
 

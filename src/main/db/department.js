@@ -32,17 +32,46 @@ function recalcAllDeptPaths() {
 }
 
 /**
+ * 检查部门编码是否已存在
+ * @param {string} code - 部门编码
+ * @param {number} excludeId - 排除的部门ID（编辑时排除自身）
+ * @returns {boolean} 编码已存在返回true
+ */
+function isCodeExists(code, excludeId = null) {
+  if (!code) return false
+  const db = getDb()
+  let stmt
+  if (excludeId) {
+    stmt = db.prepare('SELECT id FROM departments WHERE code = ? AND id != ? AND is_deleted = 0')
+    stmt.bind([code, excludeId])
+  } else {
+    stmt = db.prepare('SELECT id FROM departments WHERE code = ? AND is_deleted = 0')
+    stmt.bind([code])
+  }
+  const exists = stmt.step()
+  stmt.free()
+  return exists
+}
+
+/**
  * 新增部门
  * @param {string} name - 部门名称
+ * @param {string} code - 部门编码
  * @param {string} description - 部门描述
  * @param {number} parent_id - 上级部门ID
  * @param {Object} operator - 操作人信息 { id, name }
  * @returns {number} 新增部门的ID
+ * @throws {Error} 部门编码已存在时抛出错误
  */
-function addDepartment(name, description, parent_id, operator) {
+function addDepartment(name, code, description, parent_id, operator) {
+  // 检查部门编码是否已存在
+  if (code && isCodeExists(code)) {
+    throw new Error('部门编码已存在')
+  }
+
   const db = getDb()
-  const stmt = db.prepare('INSERT INTO departments (name, description, parent_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
-  stmt.run([name, description, parent_id || 0, operator?.id || null])
+  const stmt = db.prepare('INSERT INTO departments (name, code, description, parent_id, created_by, is_deleted) VALUES (?, ?, ?, ?, ?, 0)')
+  stmt.run([name, code || null, description, parent_id || 0, operator?.id || null])
   stmt.free()
   const idStmt = db.prepare('SELECT last_insert_rowid() as id')
   idStmt.step()
@@ -58,7 +87,7 @@ function addDepartment(name, description, parent_id, operator) {
     targetType: '部门',
     targetId: result.id,
     targetName: name,
-    detail: JSON.stringify({ description, parent_id })
+    detail: JSON.stringify({ code, description, parent_id })
   })
   return result.id
 }
@@ -80,15 +109,22 @@ function getAllDepartments() {
  * 更新部门信息
  * @param {number} id - 部门ID
  * @param {string} name - 部门名称
+ * @param {string} code - 部门编码
  * @param {string} description - 部门描述
  * @param {number} parent_id - 上级部门ID
  * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
+ * @throws {Error} 部门编码已存在时抛出错误
  */
-function updateDepartment(id, name, description, parent_id, operator) {
+function updateDepartment(id, name, code, description, parent_id, operator) {
+  // 检查部门编码是否已被其他部门使用
+  if (code && isCodeExists(code, id)) {
+    throw new Error('部门编码已存在')
+  }
+
   const db = getDb()
-  const stmt = db.prepare('UPDATE departments SET name = ?, description = ?, parent_id = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
-  stmt.run([name, description, parent_id || 0, operator?.id || null, id])
+  const stmt = db.prepare('UPDATE departments SET name = ?, code = ?, description = ?, parent_id = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
+  stmt.run([name, code || null, description, parent_id || 0, operator?.id || null, id])
   stmt.free()
   recalcAllDeptPaths()
   // 记录操作日志
@@ -100,7 +136,7 @@ function updateDepartment(id, name, description, parent_id, operator) {
     targetType: '部门',
     targetId: id,
     targetName: name,
-    detail: JSON.stringify({ description, parent_id })
+    detail: JSON.stringify({ code, description, parent_id })
   })
   return true
 }
@@ -158,5 +194,6 @@ module.exports = {
   updateDepartment,
   deleteDepartment,
   getChildDepartments,
-  recalcAllDeptPaths
+  recalcAllDeptPaths,
+  isCodeExists
 }

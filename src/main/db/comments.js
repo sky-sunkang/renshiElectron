@@ -30,6 +30,7 @@ const tableComments = {
 const fieldComments = {
   departments: {
     id: '主键，自增',
+    code: '部门编码（唯一）',
     name: '部门名称',
     description: '部门描述',
     parent_id: '父部门ID，0表示顶级部门',

@@ -22,9 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     login: (name, password) => ipcRenderer.invoke('auth:login', name, password),
   },
   dept: {
-    add: (name, description, parent_id, operator) => ipcRenderer.invoke('dept:add', name, description, parent_id, operator),
+    add: (name, code, description, parent_id, operator) => ipcRenderer.invoke('dept:add', name, code, description, parent_id, operator),
     getAll: () => ipcRenderer.invoke('dept:getAll'),
-    update: (id, name, description, parent_id, operator) => ipcRenderer.invoke('dept:update', id, name, description, parent_id, operator),
+    update: (id, name, code, description, parent_id, operator) => ipcRenderer.invoke('dept:update', id, name, code, description, parent_id, operator),
     delete: (id, operator) => ipcRenderer.invoke('dept:delete', id, operator),
     getChildren: (id) => ipcRenderer.invoke('dept:getChildren', id),
   },

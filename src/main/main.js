@@ -64,9 +64,9 @@ app.whenReady().then(() => {
   ipcMain.handle('auth:login', (_, name, password) => db.login(name, password))
 
   // Departments
-  ipcMain.handle('dept:add', (_, name, description, parent_id, operator) => db.addDepartment(name, description, parent_id, operator))
+  ipcMain.handle('dept:add', (_, name, code, description, parent_id, operator) => db.addDepartment(name, code, description, parent_id, operator))
   ipcMain.handle('dept:getAll', () => db.getAllDepartments())
-  ipcMain.handle('dept:update', (_, id, name, description, parent_id, operator) => db.updateDepartment(id, name, description, parent_id, operator))
+  ipcMain.handle('dept:update', (_, id, name, code, description, parent_id, operator) => db.updateDepartment(id, name, code, description, parent_id, operator))
   ipcMain.handle('dept:delete', (_, id, operator) => db.deleteDepartment(id, operator))
   ipcMain.handle('dept:getChildren', (_, id) => db.getChildDepartments(id))
 

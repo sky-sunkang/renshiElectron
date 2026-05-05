@@ -99,6 +99,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - **开发模式**：`./app.db`
 - **打包后**：`userData/app.db`
 - 每次写操作后自动 `save()` 持久化到文件
+- 不要用唯一主键或者外键之类的，在逻辑上处理
 
 **模块结构：**
 - `core.js` — 数据库连接管理、持久化

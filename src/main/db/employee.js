@@ -42,12 +42,39 @@ function login(account, password) {
 }
 
 /**
+ * 检查账号是否已存在
+ * @param {string} account - 账号
+ * @param {number} excludeId - 排除的员工ID（编辑时排除自身）
+ * @returns {boolean} 账号已存在返回true
+ */
+function isAccountExists(account, excludeId = null) {
+  const db = getDb()
+  let stmt
+  if (excludeId) {
+    stmt = db.prepare('SELECT id FROM employees WHERE account = ? AND id != ? AND is_deleted = 0')
+    stmt.bind([account, excludeId])
+  } else {
+    stmt = db.prepare('SELECT id FROM employees WHERE account = ? AND is_deleted = 0')
+    stmt.bind([account])
+  }
+  const exists = stmt.step()
+  stmt.free()
+  return exists
+}
+
+/**
  * 新增员工
  * @param {Object} data - 员工数据
  * @param {Object} operator - 操作人信息 { id, name }
  * @returns {number} 新增员工的ID
+ * @throws {Error} 账号已存在时抛出错误
  */
 function addEmployee(data, operator) {
+  // 检查账号是否已存在
+  if (isAccountExists(data.account)) {
+    throw new Error('账号已存在')
+  }
+
   const db = getDb()
   const stmt = db.prepare(
     'INSERT INTO employees (name, account, gender, age, phone, email, department_id, position, salary, password, created_by, is_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)'
@@ -118,8 +145,14 @@ function getEmployeeById(id) {
  * @param {Object} data - 员工数据
  * @param {Object} operator - 操作人信息 { id, name }
  * @returns {boolean} 更新成功返回true
+ * @throws {Error} 账号已存在时抛出错误
  */
 function updateEmployee(id, data, operator) {
+  // 检查账号是否已被其他员工使用
+  if (isAccountExists(data.account, id)) {
+    throw new Error('账号已存在')
+  }
+
   const db = getDb()
   const stmt = db.prepare(
     'UPDATE employees SET name = ?, account = ?, gender = ?, age = ?, phone = ?, email = ?, department_id = ?, position = ?, salary = ?, password = ?, updated_by = ?, updated_at = unixepoch() WHERE id = ?'
@@ -277,5 +310,6 @@ module.exports = {
   deleteEmployee,
   updateAvatar,
   getAvatar,
+  isAccountExists,
   generateDefaultAvatar
 }

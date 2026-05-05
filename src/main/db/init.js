@@ -168,6 +168,14 @@ function initDepartmentTables() {
   } catch (e) {
     // updated_at 列已存在
   }
+
+  // 添加部门编码字段
+  try {
+    db.run('ALTER TABLE departments ADD COLUMN code TEXT')
+    console.log('[DB] departments.code added')
+  } catch (e) {
+    // code 列已存在
+  }
 }
 
 /**

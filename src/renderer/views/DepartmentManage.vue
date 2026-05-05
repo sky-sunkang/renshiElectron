@@ -49,6 +49,9 @@
               </div>
             <el-table :data="pagedDepartments" stripe border size="small" v-loading="loading">
               <el-table-column type="index" label="序号" width="60" align="center" />
+              <el-table-column prop="code" label="部门编码" width="120">
+                <template #default="scope">{{ scope.row.code || '-' }}</template>
+              </el-table-column>
               <el-table-column prop="name" label="部门名称" min-width="160">
                 <template #default="scope">
                   <el-icon style="margin-right: 4px"><Document /></el-icon>
@@ -88,6 +91,9 @@
     <!-- 弹窗 -->
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑部门' : '新增部门'" width="480px">
       <el-form :model="form" label-width="90px" :rules="rules" ref="formRef">
+        <el-form-item label="部门编码" prop="code">
+          <el-input v-model="form.code" placeholder="请输入部门编码（唯一）" />
+        </el-form-item>
         <el-form-item label="部门名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入部门名称" />
         </el-form-item>
@@ -151,8 +157,11 @@ const pageSize = ref(10)
 
 const dialogVisible = ref(false)
 const formRef = ref()
-const form = reactive({ id: null, name: '', description: '', parent_id: 0 })
-const rules = { name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }] }
+const form = reactive({ id: null, code: '', name: '', description: '', parent_id: 0 })
+const rules = {
+  name: [{ required: true, message: '请输入部门名称', trigger: 'blur' }],
+  code: [{ required: true, message: '请输入部门编码', trigger: 'blur' }]
+}
 
 /**
  * 加载部门列表和员工数据
@@ -265,11 +274,13 @@ const parentOptionsTree = computed(() => {
 function openDialog(row) {
   if (row) {
     form.id = row.id
+    form.code = row.code || ''
     form.name = row.name
     form.description = row.description || ''
     form.parent_id = row.parent_id || 0
   } else {
     form.id = null
+    form.code = ''
     form.name = ''
     form.description = ''
     form.parent_id = currentDept.value ? currentDept.value.id : 0
@@ -281,18 +292,29 @@ function openDialog(row) {
  * 保存部门信息（新增或更新）
  */
 async function save() {
-  await formRef.value.validate()
-  const pid = form.parent_id === '' ? 0 : (form.parent_id || 0)
-  const operator = getOperator()
-  if (form.id) {
-    await window.electronAPI.dept.update(form.id, form.name, form.description, pid, operator)
-    ElMessage.success('更新成功')
-  } else {
-    await window.electronAPI.dept.add(form.name, form.description, pid, operator)
-    ElMessage.success('添加成功')
+  try {
+    await formRef.value.validate()
+    const pid = form.parent_id === '' ? 0 : (form.parent_id || 0)
+    const operator = getOperator()
+    if (form.id) {
+      await window.electronAPI.dept.update(form.id, form.name, form.code, form.description, pid, operator)
+      ElMessage.success('更新成功')
+    } else {
+      await window.electronAPI.dept.add(form.name, form.code, form.description, pid, operator)
+      ElMessage.success('添加成功')
+    }
+    dialogVisible.value = false
+    await load()
+  } catch (error) {
+    console.error('保存失败:', error)
+    // 提取实际的错误消息，去掉 IPC 包装信息
+    let msg = error.message || '保存失败'
+    const match = msg.match(/Error:\s*(.+)$/)
+    if (match) {
+      msg = match[1].trim()
+    }
+    ElMessage.error(msg)
   }
-  dialogVisible.value = false
-  await load()
 }
 
 /**
