@@ -823,6 +823,20 @@ function initPermissionTables() {
     db.run('ALTER TABLE user_roles ADD COLUMN created_by INTEGER')
     console.log('[DB] user_roles.created_by added')
   } catch (e) {}
+
+  // 创建权限分配表（支持多维度授权：角色、个人、部门、部门及下级）
+  db.run(`
+    CREATE TABLE IF NOT EXISTS permission_assignments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      permission_code TEXT NOT NULL,
+      target_type TEXT NOT NULL,
+      target_id INTEGER NOT NULL,
+      is_deleted INTEGER DEFAULT 0,
+      created_by INTEGER,
+      created_at INTEGER DEFAULT (unixepoch())
+    )
+  `)
+  console.log('[DB] permission_assignments table created')
 }
 
 /**
@@ -831,12 +845,9 @@ function initPermissionTables() {
 function initPermissionSeedData() {
   const db = getDb()
 
-  // 初始化系统角色（排除已删除的）
+  // 初始化系统角色（只保留超级管理员）
   const roles = [
-    { code: 'sysadmin', name: '超级管理员', description: '系统超级管理员，拥有所有权限', is_system: 1 },
-    { code: 'admin', name: '管理员', description: '系统管理员，拥有大部分管理权限', is_system: 1 },
-    { code: 'hr', name: '人事专员', description: '人事部门专员，管理员工信息', is_system: 1 },
-    { code: 'user', name: '普通用户', description: '普通员工，只能查看', is_system: 1 }
+    { code: 'sysadmin', name: '超级管理员', description: '系统超级管理员，拥有所有权限', is_system: 1 }
   ]
 
   roles.forEach(role => {
@@ -1012,11 +1023,8 @@ function assignPermissionsToRoles() {
   }
 
   const sysadminId = getRoleId('sysadmin')
-  const adminId = getRoleId('admin')
-  const hrId = getRoleId('hr')
-  const userId = getRoleId('user')
 
-  if (!sysadminId || !adminId || !hrId || !userId) return
+  if (!sysadminId) return
 
   // 检查是否已有权限分配（排除已删除的）
   const checkStmt = db.prepare('SELECT COUNT(*) as c FROM role_permissions WHERE is_deleted = 0')
@@ -1040,63 +1048,7 @@ function assignPermissionsToRoles() {
   }
   allPermissions.free()
   sysadminStmt.free()
-
-  // 管理员权限（除角色管理和数据库管理外）
-  const adminPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:dictionary',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary', 'menu:calendar',
-    'emp:add', 'emp:edit', 'emp:delete', 'emp:batchDelete', 'emp:export', 'emp:import',
-    'dept:add', 'dept:edit', 'dept:delete', 'dept:export',
-    'dict:add', 'dict:edit', 'dict:delete', 'dict:item:add', 'dict:item:edit', 'dict:item:delete',
-    'contract:add', 'contract:edit', 'contract:delete', 'contract:export',
-    'attendance:check', 'attendance:edit', 'attendance:delete', 'attendance:export',
-    'announcement:add', 'announcement:edit', 'announcement:delete',
-    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export',
-    'position:add', 'position:edit', 'position:delete',
-    'candidate:add', 'candidate:edit', 'candidate:delete',
-    'interview:add', 'interview:edit', 'interview:delete',
-    'indicator:add', 'indicator:edit', 'indicator:delete',
-    'assessment:add', 'assessment:edit', 'assessment:delete', 'assessment:score',
-    'salary:add', 'salary:edit', 'salary:delete', 'salary:generate', 'salary:export',
-    'adjustment:add', 'adjustment:delete',
-    'calendar:edit'
-  ]
-  const adminStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
-  adminPermissions.forEach(code => adminStmt.run([adminId, code]))
-  adminStmt.free()
-
-  // 人事专员权限
-  const hrPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract', 'menu:system', 'menu:log',
-    'menu:contract', 'menu:attendance', 'menu:announcement', 'menu:import-export', 'menu:recruitment', 'menu:performance', 'menu:salary', 'menu:calendar',
-    'emp:add', 'emp:edit', 'emp:export', 'emp:import',
-    'dept:add', 'dept:edit',
-    'contract:add', 'contract:edit', 'contract:export',
-    'attendance:check', 'attendance:edit', 'attendance:export',
-    'announcement:add', 'announcement:edit', 'announcement:delete',
-    'import-export:emp:import', 'import-export:emp:export', 'import-export:log:export',
-    'position:add', 'position:edit',
-    'candidate:add', 'candidate:edit',
-    'interview:add', 'interview:edit',
-    'indicator:add', 'indicator:edit',
-    'assessment:add', 'assessment:edit', 'assessment:score',
-    'salary:add', 'salary:edit', 'salary:generate', 'salary:export',
-    'adjustment:add',
-    'calendar:edit'
-  ]
-  const hrStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
-  hrPermissions.forEach(code => hrStmt.run([hrId, code]))
-  hrStmt.free()
-
-  // 普通用户权限（仅查看和打卡）
-  const userPermissions = [
-    'menu:employee', 'menu:department', 'menu:statistics', 'menu:statistics:employee', 'menu:statistics:log', 'menu:statistics:attendance', 'menu:statistics:performance', 'menu:statistics:recruitment', 'menu:statistics:contract',
-    'menu:attendance', 'menu:announcement', 'menu:calendar',
-    'attendance:check'
-  ]
-  const userStmt = db.prepare('INSERT INTO role_permissions (role_id, permission_code) VALUES (?, ?)')
-  userPermissions.forEach(code => userStmt.run([userId, code]))
-  userStmt.free()
+  console.log('[DB] sysadmin permissions assigned')
 }
 
 /**
@@ -1200,12 +1152,9 @@ function initSuperAdminRole() {
 function initDefaultUsersForRoles() {
   const db = getDb()
 
-  // 定义每个角色对应的员工账号（从 seedEmployees 中选择）
+  // 只为 sysadmin 账号分配超级管理员角色
   const roleUserMapping = [
-    { account: 'sysadmin', roleCode: 'sysadmin' },  // 系统管理员 -> 超级管理员
-    { account: 'zhaoliu', roleCode: 'admin' },       // 赵六（技术总监） -> 管理员
-    { account: 'zhangershiqi', roleCode: 'hr' },     // 张二十七（人事总监） -> 人事专员
-    { account: 'zhouba', roleCode: 'user' }          // 周八（前端工程师） -> 普通用户
+    { account: 'sysadmin', roleCode: 'sysadmin' }
   ]
 
   roleUserMapping.forEach(mapping => {
@@ -1251,6 +1200,53 @@ function initDefaultUsersForRoles() {
       console.log(`[DB] WARNING: user ${mapping.account} or role ${mapping.roleCode} not found`)
     }
   })
+}
+
+/**
+ * 初始化部门权限分配
+ * 为根节点部门（总公司）配置考勤相关权限
+ */
+function initDeptPermissions() {
+  const db = getDb()
+
+  // 检查是否已有部门权限分配
+  const checkStmt = db.prepare('SELECT COUNT(*) as c FROM permission_assignments WHERE target_type IN (?, ?) AND is_deleted = 0')
+  checkStmt.bind(['dept', 'dept_tree'])
+  checkStmt.step()
+  const count = Number(checkStmt.getAsObject().c)
+  checkStmt.free()
+
+  if (count > 0) {
+    console.log('[DB] dept permissions already initialized, skip')
+    return
+  }
+
+  // 获取根节点部门ID（总公司，id=1）
+  const deptStmt = db.prepare('SELECT id FROM departments WHERE id = 1 AND is_deleted = 0')
+  deptStmt.step()
+  const deptObj = deptStmt.getAsObject()
+  deptStmt.free()
+
+  if (!deptObj) {
+    console.log('[DB] root department not found, skip dept permissions init')
+    return
+  }
+
+  // 为根节点部门及下级配置考勤相关权限
+  const permissions = [
+    'menu:attendance',      // 考勤管理菜单
+    'attendance:check',     // 打卡权限
+    'attendance:export'     // 导出考勤权限
+  ]
+
+  const insertStmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, is_deleted) VALUES (?, ?, ?, 0)')
+  permissions.forEach(code => {
+    insertStmt.run([code, 'dept_tree', 1]) // dept_tree 表示本部门及下级
+  })
+  insertStmt.free()
+
+  save()
+  console.log('[DB] root dept permissions initialized: attendance menu, check, export')
 }
 
 // ==================== 操作日志初始化 ====================
@@ -1603,6 +1599,7 @@ function initAllSeedData() {
   initDictSeedData()
   initPermissionSeedData()
   initDefaultUsersForRoles()
+  initDeptPermissions()
 }
 
 /**

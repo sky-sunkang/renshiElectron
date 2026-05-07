@@ -68,6 +68,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getAllPermissions: () => ipcRenderer.invoke('perm:getAllPermissions'),
     hasPermission: (userId, code) => ipcRenderer.invoke('perm:hasPermission', userId, code),
     isSuperAdmin: (userId) => ipcRenderer.invoke('perm:isSuperAdmin', userId),
+    // 多维度权限分配
+    getUserDirectPermissions: (userId) => ipcRenderer.invoke('perm:getUserDirectPermissions', userId),
+    setUserDirectPermissions: (userId, codes, operator) => ipcRenderer.invoke('perm:setUserDirectPermissions', userId, codes, operator),
+    getDeptPermissions: (deptId, includeChildren) => ipcRenderer.invoke('perm:getDeptPermissions', deptId, includeChildren),
+    setDeptPermissions: (deptId, codes, includeChildren, operator) => ipcRenderer.invoke('perm:setDeptPermissions', deptId, codes, includeChildren, operator),
+    getPermissionAssignments: (targetType) => ipcRenderer.invoke('perm:getPermissionAssignments', targetType),
+    removePermissionAssignment: (assignmentId, operator) => ipcRenderer.invoke('perm:removePermissionAssignment', assignmentId, operator),
   },
   log: {
     add: (params) => ipcRenderer.invoke('log:add', params),

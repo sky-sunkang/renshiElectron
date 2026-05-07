@@ -240,6 +240,13 @@ module.exports = {
   getUserPermissions: permission.getUserPermissions,
   hasPermission: permission.hasPermission,
   isSuperAdmin: permission.isSuperAdmin,
+  // 多维度权限分配
+  getUserDirectPermissions: permission.getUserDirectPermissions,
+  setUserDirectPermissions: permission.setUserDirectPermissions,
+  getDeptPermissions: permission.getDeptPermissions,
+  setDeptPermissions: permission.setDeptPermissions,
+  getPermissionAssignments: permission.getPermissionAssignments,
+  removePermissionAssignment: permission.removePermissionAssignment,
   // 操作日志模块
   addLog: log.addLog,
   getLogs: log.getLogs,

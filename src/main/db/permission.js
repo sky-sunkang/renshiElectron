@@ -1,6 +1,7 @@
 /**
  * 权限模块
  * 提供RBAC权限管理：角色、权限、用户角色关联
+ * 支持多维度权限分配：角色、个人、部门、部门及下级
  */
 
 const { getDb, save } = require('./core')
@@ -8,24 +9,103 @@ const { addLog } = require('./log')
 
 /**
  * 获取用户的权限列表（排除已删除的）
+ * 包含所有来源：角色、个人、部门
  * @param {number} userId - 用户ID
  * @returns {Array} 权限代码列表
  */
 function getUserPermissions(userId) {
   const db = getDb()
-  const stmt = db.prepare(`
+  const permissions = new Set()
+
+  // 1. 通过角色获得的权限
+  const roleStmt = db.prepare(`
     SELECT DISTINCT rp.permission_code
     FROM user_roles ur
     JOIN role_permissions rp ON ur.role_id = rp.role_id
     WHERE ur.user_id = ? AND ur.is_deleted = 0 AND rp.is_deleted = 0
   `)
-  stmt.bind([userId])
-  const permissions = []
-  while (stmt.step()) {
-    permissions.push(stmt.getAsObject().permission_code)
+  roleStmt.bind([userId])
+  while (roleStmt.step()) {
+    permissions.add(roleStmt.getAsObject().permission_code)
   }
-  stmt.free()
-  return permissions
+  roleStmt.free()
+
+  // 2. 直接分配给个人的权限
+  const userStmt = db.prepare(`
+    SELECT DISTINCT permission_code
+    FROM permission_assignments
+    WHERE target_type = 'user' AND target_id = ? AND is_deleted = 0
+  `)
+  userStmt.bind([userId])
+  while (userStmt.step()) {
+    permissions.add(userStmt.getAsObject().permission_code)
+  }
+  userStmt.free()
+
+  // 3. 通过部门获得的权限
+  // 先获取用户所属部门ID
+  const deptStmt = db.prepare('SELECT department_id FROM employees WHERE id = ? AND is_deleted = 0')
+  deptStmt.bind([userId])
+  let deptId = null
+  if (deptStmt.step()) {
+    deptId = deptStmt.getAsObject().department_id
+  }
+  deptStmt.free()
+
+  if (deptId) {
+    // 3.1 直接分配给部门的权限
+    const deptPermStmt = db.prepare(`
+      SELECT DISTINCT permission_code
+      FROM permission_assignments
+      WHERE target_type = 'dept' AND target_id = ? AND is_deleted = 0
+    `)
+    deptPermStmt.bind([deptId])
+    while (deptPermStmt.step()) {
+      permissions.add(deptPermStmt.getAsObject().permission_code)
+    }
+    deptPermStmt.free()
+
+    // 3.2 分配给部门及下级的权限（需要检查用户部门是否在目标部门的下级范围内）
+    // 获取所有 dept_tree 类型的分配
+    const treeStmt = db.prepare(`
+      SELECT DISTINCT permission_code, target_id
+      FROM permission_assignments
+      WHERE target_type = 'dept_tree' AND is_deleted = 0
+    `)
+    const treeAssignments = []
+    while (treeStmt.step()) {
+      treeAssignments.push(treeStmt.getAsObject())
+    }
+    treeStmt.free()
+
+    // 获取用户部门的 path_ids
+    const pathStmt = db.prepare('SELECT path_ids FROM departments WHERE id = ? AND is_deleted = 0')
+    pathStmt.bind([deptId])
+    let userPathIds = ''
+    if (pathStmt.step()) {
+      userPathIds = pathStmt.getAsObject().path_ids || ''
+    }
+    pathStmt.free()
+
+    // 检查每个 dept_tree 分配是否包含用户部门
+    treeAssignments.forEach(assignment => {
+      // 获取目标部门的 path_ids
+      const targetPathStmt = db.prepare('SELECT path_ids FROM departments WHERE id = ? AND is_deleted = 0')
+      targetPathStmt.bind([assignment.target_id])
+      if (targetPathStmt.step()) {
+        const targetPathIds = targetPathStmt.getAsObject().path_ids || ''
+        targetPathStmt.free()
+        // 用户部门的 path_ids 以目标部门的 path_ids 开头，说明用户在目标部门或其下级
+        if (userPathIds.startsWith(targetPathIds) || userPathIds.includes('/' + targetPathIds)) {
+          permissions.add(assignment.permission_code)
+        }
+      } else {
+        targetPathStmt.free()
+      }
+    })
+  }
+
+  return Array.from(permissions)
 }
 
 /**
@@ -497,6 +577,198 @@ function getRoleUsers(roleId) {
   return users
 }
 
+// ==================== 权限分配管理（多维度授权） ====================
+
+/**
+ * 获取用户直接分配的权限列表
+ * @param {number} userId - 用户ID
+ * @returns {Array} 权限代码列表
+ */
+function getUserDirectPermissions(userId) {
+  const db = getDb()
+  const stmt = db.prepare(`
+    SELECT DISTINCT permission_code
+    FROM permission_assignments
+    WHERE target_type = 'user' AND target_id = ? AND is_deleted = 0
+  `)
+  stmt.bind([userId])
+  const permissions = []
+  while (stmt.step()) {
+    permissions.push(stmt.getAsObject().permission_code)
+  }
+  stmt.free()
+  return permissions
+}
+
+/**
+ * 设置用户的直接权限
+ * @param {number} userId - 用户ID
+ * @param {Array} permissionCodes - 权限代码列表
+ * @param {Object} operator - 操作人信息 { id, name }
+ * @returns {boolean} 设置成功返回true
+ */
+function setUserDirectPermissions(userId, permissionCodes, operator) {
+  const db = getDb()
+
+  // 获取用户名称
+  const userStmt = db.prepare('SELECT name FROM employees WHERE id = ? AND is_deleted = 0')
+  userStmt.bind([userId])
+  userStmt.step()
+  const userName = userStmt.getAsObject()?.name || ''
+  userStmt.free()
+
+  // 删除原有个人权限分配
+  const delStmt = db.prepare('DELETE FROM permission_assignments WHERE target_type = \'user\' AND target_id = ?')
+  delStmt.run([userId])
+  delStmt.free()
+
+  // 添加新权限
+  const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, \'user\', ?, ?, 0)')
+  permissionCodes.forEach(code => stmt.run([code, userId, operator?.id || null]))
+  stmt.free()
+
+  save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '权限管理',
+    action: '设置个人权限',
+    targetType: '用户',
+    targetId: userId,
+    targetName: userName,
+    detail: JSON.stringify({ permissions: permissionCodes })
+  })
+  return true
+}
+
+/**
+ * 获取部门的权限列表
+ * @param {number} deptId - 部门ID
+ * @param {boolean} includeChildren - 是否包含下级部门
+ * @returns {Array} 权限代码列表
+ */
+function getDeptPermissions(deptId, includeChildren = false) {
+  const db = getDb()
+  const targetType = includeChildren ? 'dept_tree' : 'dept'
+  const stmt = db.prepare(`
+    SELECT DISTINCT permission_code
+    FROM permission_assignments
+    WHERE target_type = ? AND target_id = ? AND is_deleted = 0
+  `)
+  stmt.bind([targetType, deptId])
+  const permissions = []
+  while (stmt.step()) {
+    permissions.push(stmt.getAsObject().permission_code)
+  }
+  stmt.free()
+  return permissions
+}
+
+/**
+ * 设置部门的权限
+ * @param {number} deptId - 部门ID
+ * @param {Array} permissionCodes - 权限代码列表
+ * @param {boolean} includeChildren - 是否包含下级部门
+ * @param {Object} operator - 操作人信息 { id, name }
+ * @returns {boolean} 设置成功返回true
+ */
+function setDeptPermissions(deptId, permissionCodes, includeChildren, operator) {
+  const db = getDb()
+  const targetType = includeChildren ? 'dept_tree' : 'dept'
+
+  // 获取部门名称
+  const deptStmt = db.prepare('SELECT name FROM departments WHERE id = ? AND is_deleted = 0')
+  deptStmt.bind([deptId])
+  deptStmt.step()
+  const deptName = deptStmt.getAsObject()?.name || ''
+  deptStmt.free()
+
+  // 删除原有部门权限分配
+  const delStmt = db.prepare('DELETE FROM permission_assignments WHERE target_type = ? AND target_id = ?')
+  delStmt.run([targetType, deptId])
+  delStmt.free()
+
+  // 添加新权限
+  const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
+  permissionCodes.forEach(code => stmt.run([code, targetType, deptId, operator?.id || null]))
+  stmt.free()
+
+  save()
+  // 记录操作日志
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '权限管理',
+    action: includeChildren ? '设置部门及下级权限' : '设置部门权限',
+    targetType: '部门',
+    targetId: deptId,
+    targetName: deptName,
+    detail: JSON.stringify({ permissions: permissionCodes, includeChildren })
+  })
+  return true
+}
+
+/**
+ * 获取所有权限分配记录
+ * @param {string} targetType - 目标类型（可选）: 'user' | 'dept' | 'dept_tree'
+ * @returns {Array} 权限分配列表
+ */
+function getPermissionAssignments(targetType = null) {
+  const db = getDb()
+  let stmt
+  if (targetType) {
+    stmt = db.prepare(`
+      SELECT pa.*, e.name as user_name, d.name as dept_name
+      FROM permission_assignments pa
+      LEFT JOIN employees e ON pa.target_type = 'user' AND pa.target_id = e.id
+      LEFT JOIN departments d ON pa.target_type IN ('dept', 'dept_tree') AND pa.target_id = d.id
+      WHERE pa.target_type = ? AND pa.is_deleted = 0
+      ORDER BY pa.target_type, pa.target_id, pa.permission_code
+    `)
+    stmt.bind([targetType])
+  } else {
+    stmt = db.prepare(`
+      SELECT pa.*, e.name as user_name, d.name as dept_name
+      FROM permission_assignments pa
+      LEFT JOIN employees e ON pa.target_type = 'user' AND pa.target_id = e.id
+      LEFT JOIN departments d ON pa.target_type IN ('dept', 'dept_tree') AND pa.target_id = d.id
+      WHERE pa.is_deleted = 0
+      ORDER BY pa.target_type, pa.target_id, pa.permission_code
+    `)
+  }
+  const assignments = []
+  while (stmt.step()) {
+    assignments.push(stmt.getAsObject())
+  }
+  stmt.free()
+  return assignments
+}
+
+/**
+ * 删除权限分配
+ * @param {number} assignmentId - 分配记录ID
+ * @param {Object} operator - 操作人信息 { id, name }
+ * @returns {boolean} 删除成功返回true
+ */
+function removePermissionAssignment(assignmentId, operator) {
+  const db = getDb()
+  const stmt = db.prepare('UPDATE permission_assignments SET is_deleted = 1 WHERE id = ?')
+  stmt.run([assignmentId])
+  stmt.free()
+  save()
+  addLog({
+    userId: operator?.id,
+    userName: operator?.name,
+    module: '权限管理',
+    action: '删除权限分配',
+    targetType: '权限分配',
+    targetId: assignmentId,
+    targetName: ''
+  })
+  return true
+}
+
 module.exports = {
   getUserPermissions,
   getUserRoles,
@@ -513,5 +785,12 @@ module.exports = {
   addUserRole,
   removeUserRole,
   getAllPermissions,
-  getRoleUsers
+  getRoleUsers,
+  // 多维度权限分配
+  getUserDirectPermissions,
+  setUserDirectPermissions,
+  getDeptPermissions,
+  setDeptPermissions,
+  getPermissionAssignments,
+  removePermissionAssignment
 }

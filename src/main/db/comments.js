@@ -19,6 +19,7 @@ const tableComments = {
   permissions: '权限表：定义系统权限（菜单权限、按钮权限）',
   role_permissions: '角色权限关联表：配置角色拥有的权限',
   user_roles: '用户角色关联表：分配用户的角色',
+  permission_assignments: '权限分配表：支持多维度授权（个人、部门、部门及下级）',
   operation_logs: '操作日志表：记录用户操作历史',
   announcements: '公告表：存储系统公告信息',
   contracts: '合同表：存储员工合同信息',
@@ -133,6 +134,15 @@ const fieldComments = {
     id: '主键，自增',
     user_id: '用户ID（员工ID）',
     role_id: '角色ID',
+    is_deleted: '是否删除，0-未删除，1-已删除',
+    created_by: '创建人ID',
+    created_at: '创建时间（Unix时间戳）'
+  },
+  permission_assignments: {
+    id: '主键，自增',
+    permission_code: '权限代码',
+    target_type: '目标类型（role-角色，user-个人，dept-部门，dept_tree-部门及下级）',
+    target_id: '目标ID（角色ID/用户ID/部门ID）',
     is_deleted: '是否删除，0-未删除，1-已删除',
     created_by: '创建人ID',
     created_at: '创建时间（Unix时间戳）'

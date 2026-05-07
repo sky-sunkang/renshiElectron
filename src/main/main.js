@@ -109,6 +109,13 @@ app.whenReady().then(() => {
   ipcMain.handle('perm:getAllPermissions', () => db.getAllPermissions())
   ipcMain.handle('perm:hasPermission', (_, userId, code) => db.hasPermission(userId, code))
   ipcMain.handle('perm:isSuperAdmin', (_, userId) => db.isSuperAdmin(userId))
+  // 多维度权限分配
+  ipcMain.handle('perm:getUserDirectPermissions', (_, userId) => db.getUserDirectPermissions(userId))
+  ipcMain.handle('perm:setUserDirectPermissions', (_, userId, codes, operator) => db.setUserDirectPermissions(userId, codes, operator))
+  ipcMain.handle('perm:getDeptPermissions', (_, deptId, includeChildren) => db.getDeptPermissions(deptId, includeChildren))
+  ipcMain.handle('perm:setDeptPermissions', (_, deptId, codes, includeChildren, operator) => db.setDeptPermissions(deptId, codes, includeChildren, operator))
+  ipcMain.handle('perm:getPermissionAssignments', (_, targetType) => db.getPermissionAssignments(targetType))
+  ipcMain.handle('perm:removePermissionAssignment', (_, assignmentId, operator) => db.removePermissionAssignment(assignmentId, operator))
 
   // Operation log
   ipcMain.handle('log:add', (_, params) => db.addLog(params))
@@ -146,9 +153,17 @@ app.whenReady().then(() => {
     const win = BrowserWindow.getFocusedWindow()
     if (win) win.close()
   })
-  ipcMain.handle('window:openDevTools', () => {
-    const win = BrowserWindow.getFocusedWindow()
-    if (win) win.webContents.openDevTools()
+  ipcMain.handle('window:openDevTools', (event) => {
+    // 优先使用发送事件的窗口，避免 getFocusedWindow 返回 null
+    const win = BrowserWindow.fromWebContents(event.sender) || BrowserWindow.getFocusedWindow()
+    if (win) {
+      // 如果开发者工具已打开，则关闭；否则打开
+      if (win.webContents.isDevToolsOpened()) {
+        win.webContents.closeDevTools()
+      } else {
+        win.webContents.openDevTools()
+      }
+    }
   })
 
   // Announcements

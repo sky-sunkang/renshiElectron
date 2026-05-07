@@ -63,7 +63,7 @@
 │   │   │   ├── DepartmentManage.vue # 部门管理（左侧部门树 + 右侧子部门列表 + Pinia）
 │   │   │   ├── DictionaryManage.vue # 字典管理（左侧类型列表 + 右侧字典项列表）
 │   │   │   ├── RoleUserManage.vue   # 角色人员管理（左侧角色列表 + 右侧已分配人员）
-│   │   │   ├── RolePermissionManage.vue # 角色权限配置（左侧角色列表 + 右侧权限勾选）
+│   │   │   ├── RolePermissionManage.vue # 权限管理（角色权限、个人权限、部门权限）
 │   │   │   ├── OperationLog.vue     # 操作日志查看
 │   │   │   ├── DatabaseManage.vue   # 数据库管理（表结构查看、数据浏览）
 │   │   │   ├── StatisticsPage.vue   # 员工统计（卡片 + 折线图 + 饼状图）
@@ -78,6 +78,7 @@
 │   │   │   └── WorkCalendarManage.vue # 工作日历（工作日、节假日、调休日设置）
 │   │   └── components/          # 公共组件
 │   │       ├── Auth.vue             # 权限控制组件
+│   │       ├── PermissionTree.vue   # 权限树组件（按模块分组的权限勾选）
 │   │       ├── EmployeeSelector.vue # 员工选择器组件（支持多选、搜索、部门筛选）
 │   │       └── DeptSelector.vue     # 部门选择器组件（支持搜索、树形展示）
 ├── vite.main.config.js          # 主进程构建配置（CJS）
@@ -123,7 +124,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `department.js` — 部门 CRUD、路径计算、操作日志记录
 - `employee.js` — 员工 CRUD、登录认证、操作日志记录
 - `dict.js` — 字典类型和字典项管理、操作日志记录
-- `permission.js` — RBAC 权限管理（角色、权限、用户角色关联）、操作日志记录
+- `permission.js` — 多维度权限管理（角色权限、个人权限、部门权限、部门及下级权限）、操作日志记录
 - `log.js` — 操作日志记录、查询、清理
 - `statistics.js` — 统计数据查询
 - `announcement.js` — 公告 CRUD、操作日志记录
@@ -144,6 +145,7 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `permissions`：id, code, name, type, description, is_deleted, created_by, created_at, updated_by, updated_at
 - `role_permissions`：id, role_id, permission_code, is_deleted, created_by, created_at
 - `user_roles`：id, user_id, role_id, is_deleted, created_by, created_at
+- `permission_assignments`：id, permission_code, target_type, target_id, is_deleted, created_by, created_at
 - `operation_logs`：id, user_id, user_name, module, action, target_type, target_id, target_name, detail, created_at
 - `announcements`：id, title, content, type, status, publisher_id, publisher_name, publish_time, expire_time, is_deleted, created_by, created_at, updated_by, updated_at
 - `contracts`：id, employee_id, contract_no, contract_type, start_date, end_date, sign_date, status, remark, is_deleted, created_by, created_at, updated_by, updated_at
@@ -176,12 +178,15 @@ npm run electron:build    # 构建并打包 Electron 应用
 - 调薪类型字典：涨薪、降薪、转正调薪、晋升调薪
 
 **系统角色：**
-| 角色代码 | 角色名称 | 默认用户 |
+| 角色代码 | 角色名称 | 说明 |
 |----------|----------|----------|
-| sysadmin | 超级管理员 | sysadmin（系统管理员） |
-| admin | 管理员 | zhaoliu（赵六，技术总监） |
-| hr | 人事专员 | zhangershiqi（张二十七，人事总监） |
-| user | 普通用户 | zhouba（周八，前端工程师） |
+| sysadmin | 超级管理员 | 系统内置角色，拥有所有权限，不可删除 |
+
+**权限分配维度：**
+- 角色权限（target_type='role'）：给角色分配权限
+- 个人权限（target_type='user'）：给特定用户直接分配权限
+- 部门权限（target_type='dept'）：给部门分配权限，仅该部门员工生效
+- 部门及下级权限（target_type='dept_tree'）：给部门分配权限，该部门及所有下级部门员工生效
 
 **权限类型：**
 - 菜单权限（menu:xxx）：控制页面访问
@@ -216,9 +221,11 @@ npm run electron:build    # 构建并打包 Electron 应用
 | 角色 | 菜单权限 |
 |------|----------|
 | 超级管理员 | 所有权限 |
-| 管理员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、字典管理、工作日历） |
-| 人事专员 | 员工管理、部门管理、合同管理、考勤管理、招聘管理、绩效考核、薪资管理、统计管理、系统管理（公告管理、数据导入导出、操作日志、工作日历） |
-| 普通用户 | 员工管理、部门管理、统计管理、考勤管理、系统管理（公告管理、工作日历，仅查看和打卡） |
+
+**部门权限初始化：**
+| 部门 | 权限 |
+|------|----------|
+| 根节点部门（含下级） | 考勤管理菜单（menu:attendance）、打卡权限（attendance:check）、导出考勤权限（attendance:export） |
 
 ## 界面布局
 
