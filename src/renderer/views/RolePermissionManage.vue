@@ -37,6 +37,7 @@
           >
             <el-table-column prop="code" label="角色编码" min-width="80" show-overflow-tooltip />
             <el-table-column prop="name" label="角色名称" min-width="80" show-overflow-tooltip />
+            <el-table-column prop="permission_count" label="权限数" width="70" align="center" />
             <el-table-column label="系统角色" width="70" align="center">
               <template #default="scope">
                 <el-tag v-if="scope.row.is_system" type="info" size="small">是</el-tag>
@@ -208,6 +209,7 @@
             @current-change="handleDeptChange"
             style="width: 100%"
           >
+            <el-table-column prop="dept_code" label="部门编码" min-width="80" show-overflow-tooltip />
             <el-table-column prop="dept_name" label="部门名称" min-width="100" show-overflow-tooltip />
             <el-table-column label="范围" width="80" align="center">
               <template #default="scope">
@@ -467,10 +469,13 @@ const allPermissions = ref([])
 
 async function loadRoles() {
   roles.value = await window.electronAPI.perm.getRoles()
-  // 加载每个角色的用户
+  // 加载每个角色的用户和权限数量
   for (const role of roles.value) {
     const users = await window.electronAPI.perm.getRoleUsers(role.id)
     roleUsers.value[role.id] = users
+    // 获取角色权限数量
+    const perms = await window.electronAPI.perm.getRolePermissions(role.id)
+    role.permission_count = perms.length
   }
 }
 
@@ -533,6 +538,7 @@ async function loadAssignedDepts() {
       deptMap[key] = {
         target_id: a.target_id,
         target_type: a.target_type,
+        dept_code: a.dept_code || '',
         dept_name: a.dept_name || '未知部门',
         permission_count: 0,
         permissions: [],
@@ -547,13 +553,19 @@ async function loadAssignedDepts() {
   // 获取每个部门的员工名称和账号
   const depts = await window.electronAPI.dept.getAll()
   const deptPathMap = {}
+  const deptCodeMap = {}
   depts.forEach(d => {
     deptPathMap[d.id] = d.path_ids || ''
+    deptCodeMap[d.id] = d.code || ''
   })
 
   for (const key of Object.keys(deptMap)) {
     const dept = deptMap[key]
     const deptId = dept.target_id
+    // 补充部门编码
+    if (!dept.dept_code) {
+      dept.dept_code = deptCodeMap[deptId] || ''
+    }
     const includeChildren = dept.target_type === 'dept_tree'
 
     // 筛选员工
@@ -701,6 +713,8 @@ async function saveRolePermissions() {
   if (!currentRole.value) return
   const permissionsToSave = JSON.parse(JSON.stringify(selectedPermissions.value))
   await window.electronAPI.perm.setRolePermissions(currentRole.value.id, permissionsToSave, getOperator())
+  // 更新权限数量
+  currentRole.value.permission_count = permissionsToSave.length
   ElMessage.success('权限保存成功')
 }
 
@@ -795,6 +809,7 @@ async function confirmAddDept() {
   const newDept = {
     target_id: selectedNewDept.value.id,
     target_type: newDeptType.value,
+    dept_code: selectedNewDept.value.code || '',
     dept_name: selectedNewDept.value.name,
     permission_count: 0,
     permissions: [],

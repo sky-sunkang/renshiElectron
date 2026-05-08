@@ -4,7 +4,10 @@
       <span class="app-title">人事管理系统</span>
     </div>
     <div class="window-controls">
-      <el-button text class="win-btn dev-btn" @click="openDevTools">
+      <el-button text class="win-btn" @click="handleRefresh">
+        <el-icon><Refresh /></el-icon>
+      </el-button>
+      <el-button text class="win-btn dev-btn" v-if="isSuperAdmin" @click="openDevTools">
         <el-icon><Monitor /></el-icon>
       </el-button>
       <el-button text class="win-btn" @click="minimizeWindow">
@@ -22,7 +25,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Minus, FullScreen, Crop, Close, Monitor } from '@element-plus/icons-vue'
+import { Minus, FullScreen, Crop, Close, Monitor, Refresh } from '@element-plus/icons-vue'
+import { storeToRefs } from 'pinia'
+import { usePermissionStore } from '../stores/permission.js'
+
+const permStore = usePermissionStore()
+const { isSuperAdmin } = storeToRefs(permStore)
 
 const isMaximized = ref(false)
 
@@ -36,6 +44,13 @@ onMounted(async () => {
  */
 async function openDevTools() {
   await window.electronAPI.window.openDevTools()
+}
+
+/**
+ * 刷新应用
+ */
+function handleRefresh() {
+  window.location.reload()
 }
 
 /**

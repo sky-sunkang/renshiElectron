@@ -14,7 +14,7 @@
 
     <!-- 统计卡片 -->
     <div class="stats-cards">
-      <div class="stat-card" v-if="hasPermission('menu:employee')">
+      <div class="stat-card">
         <div class="stat-icon" style="background: #3b82f6;">
           <el-icon :size="24"><User /></el-icon>
         </div>
@@ -23,7 +23,7 @@
           <div class="stat-label">员工总数</div>
         </div>
       </div>
-      <div class="stat-card" v-if="hasPermission('menu:department')">
+      <div class="stat-card">
         <div class="stat-icon" style="background: #10b981;">
           <el-icon :size="24"><OfficeBuilding /></el-icon>
         </div>
@@ -32,7 +32,7 @@
           <div class="stat-label">部门数量</div>
         </div>
       </div>
-      <div class="stat-card" v-if="hasPermission('menu:contract')">
+      <div class="stat-card">
         <div class="stat-icon" style="background: #f59e0b;">
           <el-icon :size="24"><Tickets /></el-icon>
         </div>
@@ -41,7 +41,7 @@
           <div class="stat-label">即将到期合同</div>
         </div>
       </div>
-      <div class="stat-card" v-if="hasPermission('menu:recruitment')">
+      <div class="stat-card">
         <div class="stat-icon" style="background: #8b5cf6;">
           <el-icon :size="24"><Briefcase /></el-icon>
         </div>
@@ -53,7 +53,7 @@
     </div>
 
     <!-- 今日考勤状态 -->
-    <el-card class="today-attendance" v-if="hasPermission('menu:attendance')">
+    <el-card class="today-attendance" v-if="hasPermission('attendance:check')">
       <template #header>
         <div class="card-header">
           <span>今日考勤</span>
@@ -99,7 +99,7 @@
     </el-card>
 
     <!-- 本月打卡日历 -->
-    <el-card class="month-calendar" v-if="hasPermission('menu:attendance')">
+    <el-card class="month-calendar" v-if="hasPermission('attendance:check')">
       <template #header>
         <div class="card-header">
           <span>本月打卡记录</span>
@@ -121,15 +121,18 @@
               'weekend': day.isWeekend && !day.isHoliday && !day.isAdjustment,
               'holiday': day.isHoliday,
               'adjustment': day.isAdjustment,
-              'checked': day.hasCheckIn,
-              'absent': day.shouldWork && !day.hasCheckIn && !day.isFuture
+              'checked': day.hasCheckIn && day.hasCheckOut,
+              'partial-checkin': day.hasCheckIn && !day.hasCheckOut,
+              'partial-checkout': !day.hasCheckIn && day.hasCheckOut,
+              'absent': day.shouldWork && !day.hasCheckIn && !day.hasCheckOut && !day.isFuture
             }"
           >
             <span v-if="day.date" class="day-num">{{ day.date }}</span>
             <span v-if="day.dayName" class="day-name">{{ day.dayName }}</span>
-            <div v-if="day.date && day.hasCheckIn" class="check-mark">
-              <el-icon v-if="day.hasCheckOut" color="#10b981"><Select /></el-icon>
-              <el-icon v-else color="#f59e0b"><SemiSelect /></el-icon>
+            <div v-if="day.date && (day.hasCheckIn || day.hasCheckOut)" class="check-mark">
+              <el-icon v-if="day.hasCheckIn && day.hasCheckOut" color="#10b981"><Select /></el-icon>
+              <el-icon v-else-if="day.hasCheckIn" color="#f59e0b"><SemiSelect /></el-icon>
+              <el-icon v-else color="#8b5cf6"><SemiSelect style="transform: rotate(180deg)" /></el-icon>
             </div>
             <el-tooltip v-if="day.date" :content="getDayTooltip(day)" placement="top">
               <span class="tooltip-trigger"></span>
@@ -140,6 +143,7 @@
       <div class="calendar-legend">
         <span class="legend-item"><span class="dot checked"></span>已打卡</span>
         <span class="legend-item"><span class="dot partial"></span>仅签到</span>
+        <span class="legend-item"><span class="dot checkout-only"></span>仅签退</span>
         <span class="legend-item"><span class="dot absent"></span>缺勤</span>
         <span class="legend-item"><span class="dot holiday"></span>节假日</span>
         <span class="legend-item"><span class="dot adjustment"></span>调休</span>
@@ -281,34 +285,26 @@ function getTypeLabel(type) {
 async function loadStats() {
   try {
     // 员工总数
-    if (hasPermission('menu:employee')) {
-      const empResult = await window.electronAPI.emp.getAll()
-      stats.value.employeeCount = empResult.length
-    }
+    const empResult = await window.electronAPI.emp.getAll()
+    stats.value.employeeCount = empResult.length
 
     // 部门数量
-    if (hasPermission('menu:department')) {
-      const deptResult = await window.electronAPI.dept.getAll()
-      stats.value.departmentCount = deptResult.length
-    }
+    const deptResult = await window.electronAPI.dept.getAll()
+    stats.value.departmentCount = deptResult.length
 
     // 即将到期合同（30天内）
-    if (hasPermission('menu:contract')) {
-      const contractResult = await window.electronAPI.contract.getAll({ page: 1, pageSize: 1000 })
-      const now = Math.floor(Date.now() / 1000)
-      const thirtyDays = 30 * 24 * 60 * 60
-      stats.value.expiringContracts = contractResult.list.filter(c => {
-        if (!c.end_date || c.status !== 'active') return false
-        const daysLeft = c.end_date - now
-        return daysLeft > 0 && daysLeft <= thirtyDays
-      }).length
-    }
+    const contractResult = await window.electronAPI.contract.getAll({ page: 1, pageSize: 1000 })
+    const now = Math.floor(Date.now() / 1000)
+    const thirtyDays = 30 * 24 * 60 * 60
+    stats.value.expiringContracts = contractResult.list.filter(c => {
+      if (!c.end_date || c.status !== 'active') return false
+      const daysLeft = c.end_date - now
+      return daysLeft > 0 && daysLeft <= thirtyDays
+    }).length
 
     // 招聘中岗位
-    if (hasPermission('menu:recruitment')) {
-      const positionResult = await window.electronAPI.position.getAll({ page: 1, pageSize: 1000 })
-      stats.value.activePositions = positionResult.list.filter(p => p.status === 'open').length
-    }
+    const positionResult = await window.electronAPI.position.getAll({ page: 1, pageSize: 1000 })
+    stats.value.activePositions = positionResult.list.filter(p => p.status === 'open').length
   } catch (e) {
     console.error('加载统计数据失败', e)
   }
@@ -901,6 +897,22 @@ onMounted(() => {
   color: #10b981;
 }
 
+.calendar-day.partial-checkin {
+  background: #fef3c7;
+}
+
+.calendar-day.partial-checkin .day-num {
+  color: #f59e0b;
+}
+
+.calendar-day.partial-checkout {
+  background: #ede9fe;
+}
+
+.calendar-day.partial-checkout .day-num {
+  color: #8b5cf6;
+}
+
 .calendar-day.absent {
   background: #fee2e2;
 }
@@ -971,6 +983,11 @@ onMounted(() => {
 .legend-item .dot.partial {
   background: #fef3c7;
   border: 1px solid #f59e0b;
+}
+
+.legend-item .dot.checkout-only {
+  background: #ede9fe;
+  border: 1px solid #8b5cf6;
 }
 
 .legend-item .dot.absent {

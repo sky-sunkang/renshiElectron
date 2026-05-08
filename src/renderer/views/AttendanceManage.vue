@@ -7,7 +7,7 @@
     </div>
 
     <el-form :inline="true" class="search-form">
-      <el-form-item label="员工">
+      <el-form-item label="员工" v-if="hasPermission('attendance:view')">
         <el-input v-model="searchEmployee" placeholder="员工姓名/账号" clearable @keyup.enter="loadList" />
       </el-form-item>
       <el-form-item label="类型">
@@ -209,10 +209,15 @@ async function loadList() {
       options.end_time = Math.floor(dateRange.value[1] / 1000) + 86400
     }
 
+    // 没有查看考勤权限的用户只能看到自己的记录
+    if (!hasPermission('attendance:view')) {
+      options.employee_id = currentUser.value?.id
+    }
+
     const result = await window.electronAPI.attendance.getAll(options)
 
     // 如果有员工搜索条件，前端过滤
-    if (searchEmployee.value) {
+    if (searchEmployee.value && hasPermission('attendance:view')) {
       const keyword = searchEmployee.value.toLowerCase()
       result.list = result.list.filter(item =>
         (item.employee_name && item.employee_name.toLowerCase().includes(keyword)) ||

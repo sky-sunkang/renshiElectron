@@ -904,6 +904,10 @@ function initPermissionSeedData() {
     { code: 'emp:batchDelete', name: '批量删除员工', type: 'button', description: '批量删除员工按钮' },
     { code: 'emp:export', name: '导出员工', type: 'button', description: '导出员工数据按钮' },
     { code: 'emp:import', name: '导入员工', type: 'button', description: '导入员工数据按钮' },
+    // 员工信息显示权限
+    { code: 'emp:view:salary', name: '查看薪资', type: 'button', description: '查看员工薪资信息' },
+    { code: 'emp:view:phone', name: '查看手机号', type: 'button', description: '查看员工手机号' },
+    { code: 'emp:view:email', name: '查看邮箱', type: 'button', description: '查看员工邮箱' },
     // 部门管理按钮权限
     { code: 'dept:add', name: '新增部门', type: 'button', description: '新增部门按钮' },
     { code: 'dept:edit', name: '编辑部门', type: 'button', description: '编辑部门按钮' },
@@ -947,6 +951,7 @@ function initPermissionSeedData() {
     { code: 'menu:attendance', name: '考勤管理菜单', type: 'menu', description: '访问考勤管理页面' },
     // 考勤管理按钮权限
     { code: 'attendance:check', name: '打卡', type: 'button', description: '签到签退按钮' },
+    { code: 'attendance:view', name: '查看考勤', type: 'button', description: '查看考勤记录' },
     { code: 'attendance:edit', name: '编辑考勤', type: 'button', description: '编辑考勤记录按钮' },
     { code: 'attendance:delete', name: '删除考勤', type: 'button', description: '删除考勤记录按钮' },
     { code: 'attendance:export', name: '导出考勤', type: 'button', description: '导出考勤数据按钮' },
@@ -1232,11 +1237,11 @@ function initDeptPermissions() {
     return
   }
 
-  // 为根节点部门及下级配置考勤相关权限
+  // 为根节点部门及下级配置基础权限
   const permissions = [
-    'menu:attendance',      // 考勤管理菜单
-    'attendance:check',     // 打卡权限
-    'attendance:export'     // 导出考勤权限
+    'menu:employee',        // 员工管理菜单
+    'menu:department',      // 部门管理菜单
+    'attendance:check'      // 打卡权限（仅自己打卡）
   ]
 
   const insertStmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, is_deleted) VALUES (?, ?, ?, 0)')
@@ -1246,7 +1251,7 @@ function initDeptPermissions() {
   insertStmt.free()
 
   save()
-  console.log('[DB] root dept permissions initialized: attendance menu, check, export')
+  console.log('[DB] root dept permissions initialized: employee, department menu, check')
 }
 
 // ==================== 操作日志初始化 ====================

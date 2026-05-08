@@ -57,14 +57,27 @@
             <el-table-column prop="name" label="姓名" min-width="100" />
             <el-table-column prop="gender" label="性别" width="70" align="center" />
             <el-table-column prop="age" label="年龄" width="70" align="center" />
-            <el-table-column prop="phone" label="手机号" min-width="120" />
-            <el-table-column prop="email" label="邮箱" min-width="160" />
+            <el-table-column prop="phone" label="手机号" min-width="120">
+              <template #default="scope">
+                <span v-if="permStore.hasPermission('emp:view:phone')">{{ scope.row.phone || '-' }}</span>
+                <span v-else>***</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="email" label="邮箱" min-width="160">
+              <template #default="scope">
+                <span v-if="permStore.hasPermission('emp:view:email')">{{ scope.row.email || '-' }}</span>
+                <span v-else>***</span>
+              </template>
+            </el-table-column>
             <el-table-column label="部门" min-width="200">
               <template #default="scope">{{ scope.row.department_path || scope.row.department_name || '-' }}</template>
             </el-table-column>
             <el-table-column prop="position" label="职位" min-width="120" />
             <el-table-column prop="salary" label="薪资" width="100" align="right">
-              <template #default="scope">{{ scope.row.salary ? '¥' + scope.row.salary.toFixed(0) : '-' }}</template>
+              <template #default="scope">
+                <span v-if="permStore.hasPermission('emp:view:salary')">{{ scope.row.salary ? '¥' + scope.row.salary.toFixed(0) : '-' }}</span>
+                <span v-else>***</span>
+              </template>
             </el-table-column>
             <el-table-column label="操作" width="140" align="center" fixed="right">
               <template #default="scope">
