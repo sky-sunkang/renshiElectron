@@ -202,7 +202,7 @@ function deleteContract(id, operator) {
   const db = getDb()
 
   // 获取合同信息用于日志
-  const infoStmt = db.prepare('SELECT contract_no FROM contracts WHERE id = ?')
+  const infoStmt = db.prepare('SELECT contract_no, contract_type, status FROM contracts WHERE id = ?')
   infoStmt.bind([id])
   infoStmt.step()
   const info = infoStmt.getAsObject()
@@ -222,7 +222,8 @@ function deleteContract(id, operator) {
     action: '删除',
     targetType: '合同',
     targetId: id,
-    targetName: info?.contract_no || `合同${id}`
+    targetName: info?.contract_no || `合同${id}`,
+    detail: JSON.stringify({ contract_type: info?.contract_type, status: info?.status })
   })
 
   return true

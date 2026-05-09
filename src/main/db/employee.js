@@ -33,7 +33,8 @@ function login(account, password) {
       action: '登录',
       targetType: '用户',
       targetId: user.id,
-      targetName: user.name
+      targetName: user.name,
+      detail: JSON.stringify({ account: user.account })
     })
   }
   stmt.free()
@@ -202,7 +203,8 @@ function updatePassword(id, password, operator) {
     action: '修改密码',
     targetType: '员工',
     targetId: id,
-    targetName: empName
+    targetName: empName,
+    detail: JSON.stringify({ account: empInfo?.account })
   })
   return true
 }

@@ -323,7 +323,8 @@ function deleteRole(id, operator) {
     action: '删除',
     targetType: '角色',
     targetId: id,
-    targetName: roleInfo?.name
+    targetName: roleInfo?.name,
+    detail: JSON.stringify({ code: roleInfo?.code })
   })
   return true
 }
@@ -617,15 +618,21 @@ function setUserDirectPermissions(userId, permissionCodes, operator) {
   const userName = userStmt.getAsObject()?.name || ''
   userStmt.free()
 
-  // 删除原有个人权限分配
+  // 删除原有个人权限分配（物理删除）
   const delStmt = db.prepare('DELETE FROM permission_assignments WHERE target_type = \'user\' AND target_id = ?')
   delStmt.run([userId])
   delStmt.free()
 
-  // 添加新权限
-  const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, \'user\', ?, ?, 0)')
-  permissionCodes.forEach(code => stmt.run([code, userId, operator?.id || null]))
-  stmt.free()
+  // 添加新权限（如果权限列表为空，则插入一条空记录以保持用户在列表中可见）
+  if (permissionCodes.length === 0) {
+    const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, \'user\', ?, ?, 0)')
+    stmt.run(['', userId, operator?.id || null])
+    stmt.free()
+  } else {
+    const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, \'user\', ?, ?, 0)')
+    permissionCodes.forEach(code => stmt.run([code, userId, operator?.id || null]))
+    stmt.free()
+  }
 
   save()
   // 记录操作日志
@@ -684,15 +691,21 @@ function setDeptPermissions(deptId, permissionCodes, includeChildren, operator) 
   const deptName = deptStmt.getAsObject()?.name || ''
   deptStmt.free()
 
-  // 删除原有部门权限分配
+  // 删除原有部门权限分配（物理删除）
   const delStmt = db.prepare('DELETE FROM permission_assignments WHERE target_type = ? AND target_id = ?')
   delStmt.run([targetType, deptId])
   delStmt.free()
 
-  // 添加新权限
-  const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
-  permissionCodes.forEach(code => stmt.run([code, targetType, deptId, operator?.id || null]))
-  stmt.free()
+  // 添加新权限（如果权限列表为空，则插入一条空记录以保持部门在列表中可见）
+  if (permissionCodes.length === 0) {
+    const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    stmt.run(['', targetType, deptId, operator?.id || null])
+    stmt.free()
+  } else {
+    const stmt = db.prepare('INSERT INTO permission_assignments (permission_code, target_type, target_id, created_by, is_deleted) VALUES (?, ?, ?, ?, 0)')
+    permissionCodes.forEach(code => stmt.run([code, targetType, deptId, operator?.id || null]))
+    stmt.free()
+  }
 
   save()
   // 记录操作日志
@@ -753,6 +766,20 @@ function getPermissionAssignments(targetType = null) {
  */
 function removePermissionAssignment(assignmentId, operator) {
   const db = getDb()
+
+  // 获取权限分配信息
+  const infoStmt = db.prepare(`
+    SELECT pa.*, e.name as user_name, d.name as dept_name
+    FROM permission_assignments pa
+    LEFT JOIN employees e ON pa.target_type = 'user' AND pa.target_id = e.id
+    LEFT JOIN departments d ON pa.target_type IN ('dept', 'dept_tree') AND pa.target_id = d.id
+    WHERE pa.id = ?
+  `)
+  infoStmt.bind([assignmentId])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE permission_assignments SET is_deleted = 1 WHERE id = ?')
   stmt.run([assignmentId])
   stmt.free()
@@ -764,7 +791,11 @@ function removePermissionAssignment(assignmentId, operator) {
     action: '删除权限分配',
     targetType: '权限分配',
     targetId: assignmentId,
-    targetName: ''
+    targetName: info?.user_name || info?.dept_name || '',
+    detail: JSON.stringify({
+      permission_code: info?.permission_code,
+      target_type: info?.target_type
+    })
   })
   return true
 }

@@ -118,7 +118,8 @@ function addAttendance(data, operator) {
     action: '打卡',
     targetType: '考勤',
     targetId: result.id,
-    targetName: data.type === 'check_in' ? '签到' : '签退'
+    targetName: data.type === 'check_in' ? '签到' : '签退',
+    detail: JSON.stringify({ employee_id: data.employee_id, type: data.type })
   })
 
   return result.id
@@ -161,7 +162,8 @@ function updateAttendance(id, data, operator) {
     action: '编辑',
     targetType: '考勤',
     targetId: id,
-    targetName: '考勤记录'
+    targetName: '考勤记录',
+    detail: JSON.stringify({ employee_id: data.employee_id, type: data.type })
   })
 
   return true
@@ -175,6 +177,13 @@ function updateAttendance(id, data, operator) {
  */
 function deleteAttendance(id, operator) {
   const db = getDb()
+
+  // 获取考勤信息
+  const infoStmt = db.prepare('SELECT employee_id, type FROM attendance WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
 
   const stmt = db.prepare('UPDATE attendance SET is_deleted = 1, updated_by = ?, updated_at = ? WHERE id = ?')
   stmt.bind([operator?.id || null, Math.floor(Date.now() / 1000), id])
@@ -190,7 +199,8 @@ function deleteAttendance(id, operator) {
     action: '删除',
     targetType: '考勤',
     targetId: id,
-    targetName: '考勤记录'
+    targetName: '考勤记录',
+    detail: JSON.stringify({ employee_id: info?.employee_id, type: info?.type })
   })
 
   return true

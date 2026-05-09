@@ -133,7 +133,8 @@ function addAnnouncement(data, operator) {
     action: '新增',
     targetType: '公告',
     targetId: result.id,
-    targetName: data.title
+    targetName: data.title,
+    detail: JSON.stringify({ type: data.type, status: data.status })
   })
 
   return result.id
@@ -215,7 +216,7 @@ function deleteAnnouncement(id, operator) {
   const db = getDb()
 
   // 获取公告信息用于日志
-  const infoStmt = db.prepare('SELECT title FROM announcements WHERE id = ?')
+  const infoStmt = db.prepare('SELECT title, type, status FROM announcements WHERE id = ?')
   infoStmt.bind([id])
   infoStmt.step()
   const info = infoStmt.getAsObject()
@@ -234,7 +235,8 @@ function deleteAnnouncement(id, operator) {
     action: '删除',
     targetType: '公告',
     targetId: id,
-    targetName: info?.title
+    targetName: info?.title,
+    detail: JSON.stringify({ type: info?.type, status: info?.status })
   })
 
   return true

@@ -150,7 +150,7 @@ function updateDepartment(id, name, code, description, parent_id, operator) {
 function deleteDepartment(id, operator) {
   const db = getDb()
   // 获取部门信息用于日志记录
-  const infoStmt = db.prepare('SELECT name FROM departments WHERE id = ?')
+  const infoStmt = db.prepare('SELECT name, code FROM departments WHERE id = ?')
   infoStmt.bind([id])
   infoStmt.step()
   const deptInfo = infoStmt.getAsObject()
@@ -168,7 +168,8 @@ function deleteDepartment(id, operator) {
     action: '删除',
     targetType: '部门',
     targetId: id,
-    targetName: deptInfo?.name
+    targetName: deptInfo?.name,
+    detail: JSON.stringify({ code: deptInfo?.code })
   })
   return true
 }

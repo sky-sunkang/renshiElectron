@@ -498,8 +498,11 @@ async function loadAssignedUsers() {
         permissions: []
       }
     }
-    userMap[a.target_id].permission_count++
-    userMap[a.target_id].permissions.push(a.permission_code)
+    // 过滤空权限码
+    if (a.permission_code) {
+      userMap[a.target_id].permission_count++
+      userMap[a.target_id].permissions.push(a.permission_code)
+    }
   })
   assignedUsers.value = Object.values(userMap)
 }
@@ -546,8 +549,11 @@ async function loadAssignedDepts() {
         user_accounts: '' // 用于搜索
       }
     }
-    deptMap[key].permission_count++
-    deptMap[key].permissions.push(a.permission_code)
+    // 过滤空权限码
+    if (a.permission_code) {
+      deptMap[key].permission_count++
+      deptMap[key].permissions.push(a.permission_code)
+    }
   })
 
   // 获取每个部门的员工名称和账号
@@ -744,24 +750,32 @@ function showAddUserDialog() {
 /**
  * 用户选择器确认
  */
-function handleUserSelectorConfirm(selectedUsers) {
+async function handleUserSelectorConfirm(selectedUsers) {
   if (selectedUsers.length === 0) return
 
   const user = selectedUsers[0]
-  const newUser = {
-    target_id: user.id,
-    target_type: 'user',
-    user_name: user.name,
-    account: user.account,
-    permission_count: 0,
-    permissions: []
+
+  // 先保存到数据库
+  try {
+    await window.electronAPI.perm.setUserDirectPermissions(user.id, [], getOperator())
+
+    const newUser = {
+      target_id: user.id,
+      target_type: 'user',
+      user_name: user.name,
+      account: user.account,
+      permission_count: 0,
+      permissions: []
+    }
+    assignedUsers.value.push(newUser)
+
+    currentUser.value = newUser
+    selectedUserPermissions.value = []
+
+    ElMessage.success('已添加用户，请配置权限')
+  } catch (e) {
+    ElMessage.error('添加用户失败：' + e.message)
   }
-  assignedUsers.value.push(newUser)
-
-  currentUser.value = newUser
-  selectedUserPermissions.value = []
-
-  ElMessage.success('已添加用户，请配置权限')
 }
 
 async function removeUserPermissions(row) {
@@ -806,22 +820,30 @@ async function confirmAddDept() {
     return
   }
 
-  const newDept = {
-    target_id: selectedNewDept.value.id,
-    target_type: newDeptType.value,
-    dept_code: selectedNewDept.value.code || '',
-    dept_name: selectedNewDept.value.name,
-    permission_count: 0,
-    permissions: [],
-    user_names: ''
+  // 先保存到数据库
+  const includeChildren = newDeptType.value === 'dept_tree'
+  try {
+    await window.electronAPI.perm.setDeptPermissions(selectedNewDept.value.id, [], includeChildren, getOperator())
+
+    const newDept = {
+      target_id: selectedNewDept.value.id,
+      target_type: newDeptType.value,
+      dept_code: selectedNewDept.value.code || '',
+      dept_name: selectedNewDept.value.name,
+      permission_count: 0,
+      permissions: [],
+      user_names: ''
+    }
+    assignedDepts.value.push(newDept)
+
+    currentDept.value = newDept
+    selectedDeptPermissions.value = []
+
+    addDeptDialogVisible.value = false
+    ElMessage.success('已添加部门，请配置权限')
+  } catch (e) {
+    ElMessage.error('添加部门失败：' + e.message)
   }
-  assignedDepts.value.push(newDept)
-
-  currentDept.value = newDept
-  selectedDeptPermissions.value = []
-
-  addDeptDialogVisible.value = false
-  ElMessage.success('已添加部门，请配置权限')
 }
 
 async function removeDeptPermissions(row) {

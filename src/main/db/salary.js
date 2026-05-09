@@ -190,7 +190,8 @@ function updateSalarySheet(id, data, operator) {
     module: '薪资管理',
     action: '编辑工资条',
     targetType: 'salary_sheet',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ month: data.month, actual_salary: data.actual_salary, status: data.status })
   })
 
   return true
@@ -204,6 +205,14 @@ function updateSalarySheet(id, data, operator) {
  */
 function deleteSalarySheet(id, operator) {
   const db = getDb()
+
+  // 获取工资条信息
+  const infoStmt = db.prepare('SELECT employee_id, month, actual_salary FROM salary_sheets WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE salary_sheets SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -216,7 +225,8 @@ function deleteSalarySheet(id, operator) {
     module: '薪资管理',
     action: '删除工资条',
     targetType: 'salary_sheet',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ employee_id: info?.employee_id, month: info?.month, actual_salary: info?.actual_salary })
   })
 
   return true
@@ -464,6 +474,14 @@ function addSalaryAdjustment(data, operator) {
  */
 function deleteSalaryAdjustment(id, operator) {
   const db = getDb()
+
+  // 获取调薪记录信息
+  const infoStmt = db.prepare('SELECT employee_id, type, before_salary, after_salary FROM salary_adjustments WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE salary_adjustments SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -476,7 +494,13 @@ function deleteSalaryAdjustment(id, operator) {
     module: '薪资管理',
     action: '删除调薪记录',
     targetType: 'salary_adjustment',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({
+      employee_id: info?.employee_id,
+      type: info?.type,
+      before_salary: info?.before_salary,
+      after_salary: info?.after_salary
+    })
   })
 
   return true

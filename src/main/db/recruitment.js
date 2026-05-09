@@ -190,6 +190,14 @@ function updatePosition(id, data, operator) {
  */
 function deletePosition(id, operator) {
   const db = getDb()
+
+  // 获取岗位信息
+  const infoStmt = db.prepare('SELECT title, department_name, status FROM positions WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE positions SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -202,7 +210,9 @@ function deletePosition(id, operator) {
     module: '招聘管理',
     action: '删除岗位',
     targetType: 'position',
-    targetId: id
+    targetId: id,
+    targetName: info?.title,
+    detail: JSON.stringify({ department: info?.department_name, status: info?.status })
   })
 
   return true
@@ -384,6 +394,14 @@ function updateCandidate(id, data, operator) {
  */
 function deleteCandidate(id, operator) {
   const db = getDb()
+
+  // 获取候选人信息
+  const infoStmt = db.prepare('SELECT name, position_id, status FROM candidates WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE candidates SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -396,7 +414,9 @@ function deleteCandidate(id, operator) {
     module: '招聘管理',
     action: '删除候选人',
     targetType: 'candidate',
-    targetId: id
+    targetId: id,
+    targetName: info?.name,
+    detail: JSON.stringify({ position_id: info?.position_id, status: info?.status })
   })
 
   return true
@@ -539,7 +559,8 @@ function updateInterview(id, data, operator) {
     module: '招聘管理',
     action: '更新面试',
     targetType: 'interview',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ status: data.status, result: data.result })
   })
 
   return true
@@ -553,6 +574,14 @@ function updateInterview(id, data, operator) {
  */
 function deleteInterview(id, operator) {
   const db = getDb()
+
+  // 获取面试信息
+  const infoStmt = db.prepare('SELECT candidate_id, round, status FROM interviews WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE interviews SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -565,7 +594,8 @@ function deleteInterview(id, operator) {
     module: '招聘管理',
     action: '删除面试',
     targetType: 'interview',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ candidate_id: info?.candidate_id, round: info?.round, status: info?.status })
   })
 
   return true

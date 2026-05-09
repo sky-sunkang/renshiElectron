@@ -148,7 +148,9 @@ function updateIndicator(id, data, operator) {
     module: '绩效考核',
     action: '编辑指标',
     targetType: 'indicator',
-    targetId: id
+    targetId: id,
+    targetName: data.name,
+    detail: JSON.stringify({ category: data.category, max_score: data.max_score, weight: data.weight })
   })
 
   return true
@@ -162,6 +164,14 @@ function updateIndicator(id, data, operator) {
  */
 function deleteIndicator(id, operator) {
   const db = getDb()
+
+  // 获取指标信息
+  const infoStmt = db.prepare('SELECT name, category FROM performance_indicators WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE performance_indicators SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -174,7 +184,9 @@ function deleteIndicator(id, operator) {
     module: '绩效考核',
     action: '删除指标',
     targetType: 'indicator',
-    targetId: id
+    targetId: id,
+    targetName: info?.name,
+    detail: JSON.stringify({ category: info?.category })
   })
 
   return true
@@ -350,7 +362,8 @@ function updateAssessment(id, data, operator) {
     module: '绩效考核',
     action: '编辑考核',
     targetType: 'assessment',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ total_score: data.total_score, level: data.level, status: data.status })
   })
 
   return true
@@ -364,6 +377,14 @@ function updateAssessment(id, data, operator) {
  */
 function deleteAssessment(id, operator) {
   const db = getDb()
+
+  // 获取考核信息
+  const infoStmt = db.prepare('SELECT employee_id, period, total_score FROM assessments WHERE id = ?')
+  infoStmt.bind([id])
+  infoStmt.step()
+  const info = infoStmt.getAsObject()
+  infoStmt.free()
+
   const stmt = db.prepare('UPDATE assessments SET is_deleted = 1, updated_by = ?, updated_at = unixepoch() WHERE id = ?')
   stmt.run([operator?.id || null, id])
   stmt.free()
@@ -376,7 +397,8 @@ function deleteAssessment(id, operator) {
     module: '绩效考核',
     action: '删除考核',
     targetType: 'assessment',
-    targetId: id
+    targetId: id,
+    detail: JSON.stringify({ employee_id: info?.employee_id, period: info?.period, total_score: info?.total_score })
   })
 
   return true
