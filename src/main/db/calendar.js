@@ -42,20 +42,31 @@ function initCalendarTables() {
 function initYearCalendar(year, operator = null) {
   const db = getDb()
 
-  // 检查是否已有该年数据
-  const checkStmt = db.prepare(`SELECT COUNT(*) as c FROM work_calendar WHERE date_str LIKE ? AND is_deleted = 0`)
+  // 计算该年应有的天数
+  let expectedDays = 0
+  for (let month = 1; month <= 12; month++) {
+    expectedDays += new Date(year, month, 0).getDate()
+  }
+
+  // 检查是否已有该年完整数据（包括已删除的）
+  const checkStmt = db.prepare(`SELECT COUNT(*) as c FROM work_calendar WHERE date_str LIKE ?`)
   checkStmt.bind([`${year}-%`])
   checkStmt.step()
   const count = Number(checkStmt.getAsObject().c)
   checkStmt.free()
 
-  if (count > 0) {
-    console.log(`[DB] calendar for year ${year} already exists`)
+  // 如果已有完整数据，恢复已删除的记录并返回
+  if (count >= expectedDays) {
+    // 恢复该年所有已删除的记录
+    const restoreStmt = db.prepare('UPDATE work_calendar SET is_deleted = 0 WHERE date_str LIKE ? AND is_deleted = 1')
+    restoreStmt.run([`${year}-%`])
+    restoreStmt.free()
+    save()
+    console.log(`[DB] calendar for year ${year} already exists, restored deleted records`)
     return
   }
 
-  // 生成全年日历
-  const stmt = db.prepare('INSERT INTO work_calendar (date, date_str, type, is_deleted, created_by) VALUES (?, ?, ?, 0, ?)')
+  // 生成全年日历（只插入不存在的日期）
   const operatorId = operator?.id || null
 
   for (let month = 1; month <= 12; month++) {
@@ -69,10 +80,28 @@ function initYearCalendar(year, operator = null) {
       // 默认：周末为休息日，工作日为工作日
       const type = (dayOfWeek === 0 || dayOfWeek === 6) ? 'weekend' : 'workday'
 
-      stmt.run([timestamp, dateStr, type, operatorId])
+      // 检查该日期是否已存在
+      const existStmt = db.prepare('SELECT id, is_deleted FROM work_calendar WHERE date_str = ?')
+      existStmt.bind([dateStr])
+      const hasRow = existStmt.step()
+      const existing = hasRow ? existStmt.getAsObject() : null
+      existStmt.free()
+
+      if (!existing) {
+        // 不存在，插入新记录
+        const stmt = db.prepare('INSERT INTO work_calendar (date, date_str, type, is_deleted, created_by) VALUES (?, ?, ?, 0, ?)')
+        stmt.run([timestamp, dateStr, type, operatorId])
+        stmt.free()
+      } else if (existing.is_deleted === 1) {
+        // 已删除，恢复并更新
+        const stmt = db.prepare('UPDATE work_calendar SET is_deleted = 0, type = ?, updated_by = ? WHERE id = ?')
+        stmt.run([type, operatorId, existing.id])
+        stmt.free()
+      }
+      // 已存在且未删除，跳过
     }
   }
-  stmt.free()
+
   save()
   console.log(`[DB] calendar for year ${year} initialized`)
 }

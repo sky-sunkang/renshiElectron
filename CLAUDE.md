@@ -28,7 +28,11 @@
 │   │   └── db/                  # 数据库模块（按功能拆分）
 │   │       ├── index.js         # 模块入口：整合所有子模块统一导出
 │   │       ├── core.js          # 核心模块：数据库连接、持久化
-│   │       ├── init.js          # 初始化脚本：表结构创建、种子数据初始化
+│   │       ├── init.js          # 初始化入口：引用 init 目录
+│   │       ├── init/            # 初始化相关文件
+│   │       │   ├── tables.js    # 表结构定义
+│   │       │   ├── seeds.js     # 种子数据初始化
+│   │       │   └── comments.js  # 表和字段注释
 │   │       ├── department.js    # 部门模块：部门增删改查、路径计算
 │   │       ├── employee.js      # 员工模块：员工增删改查、登录认证
 │   │       ├── dict.js          # 字典模块：字典类型和字典项管理
@@ -41,8 +45,7 @@
 │   │       ├── recruitment.js   # 招聘模块：岗位、候选人、面试管理
 │   │       ├── performance.js   # 绩效模块：考核指标、考核记录、评分
 │   │       ├── salary.js        # 薪资模块：工资条、调薪记录、薪资统计
-│   │       ├── calendar.js      # 工作日历模块：工作日、节假日、调休日管理
-│   │       └── comments.js      # 表和字段注释：用于数据库管理页面显示
+│   │       └── calendar.js      # 工作日历模块：工作日、节假日、调休日管理
 │   ├── preload/                 # 预加载脚本
 │   │   └── index.js             # contextBridge 暴露安全 API
 │   ├── renderer/                # 渲染进程（Vue3 前端）
@@ -120,7 +123,10 @@ npm run electron:build    # 构建并打包 Electron 应用
 
 **模块结构：**
 - `core.js` — 数据库连接管理、持久化
-- `init.js` — 初始化脚本（表结构创建、种子数据、角色权限初始化）
+- `init.js` — 初始化入口（引用 init 目录）
+- `init/tables.js` — 表结构定义
+- `init/seeds.js` — 种子数据初始化（部门、员工、字典、权限）
+- `init/comments.js` — 表和字段注释（数据库管理页面显示）
 - `department.js` — 部门 CRUD、路径计算、操作日志记录
 - `employee.js` — 员工 CRUD、登录认证、操作日志记录
 - `dict.js` — 字典类型和字典项管理、操作日志记录
@@ -134,7 +140,6 @@ npm run electron:build    # 构建并打包 Electron 应用
 - `performance.js` — 绩效 CRUD（考核指标、考核记录、评分）、操作日志记录
 - `salary.js` — 薪资 CRUD（工资条、调薪记录）、薪资统计、操作日志记录
 - `calendar.js` — 工作日历管理（工作日、节假日、调休日）、操作日志记录
-- `comments.js` — 表和字段注释（数据库管理页面显示）
 
 **表结构：**
 - `departments`：id, name, code, description, parent_id, path_ids, path_names, is_deleted, created_by, created_at, updated_by, updated_at
