@@ -23,6 +23,8 @@
             <el-empty v-if="menuItems.length === 0" description="您没有任何菜单权限，请联系管理员" />
             <router-view v-else />
           </div>
+
+          <Footer />
         </div>
       </div>
 
@@ -53,6 +55,7 @@ import routerConfig from './router/index.js'
 import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import TopBar from './components/TopBar.vue'
+import Footer from './components/Footer.vue'
 import PasswordDialog from './components/PasswordDialog.vue'
 import ProfileDialog from './components/ProfileDialog.vue'
 
