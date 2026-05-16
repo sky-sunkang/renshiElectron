@@ -19,6 +19,8 @@
             @logout="handleLogout"
           />
 
+          <TabBar />
+
           <div class="content-body">
             <el-empty v-if="menuItems.length === 0" description="您没有任何菜单权限，请联系管理员" />
             <router-view v-else />
@@ -47,21 +49,25 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import { useAuthStore } from './stores/auth.js'
 import { usePermissionStore } from './stores/permission.js'
+import { useTabsStore } from './stores/tabs.js'
 import routerConfig from './router/index.js'
 import TitleBar from './components/TitleBar.vue'
 import Sidebar from './components/Sidebar.vue'
 import TopBar from './components/TopBar.vue'
+import TabBar from './components/TabBar.vue'
 import Footer from './components/Footer.vue'
 import PasswordDialog from './components/PasswordDialog.vue'
 import ProfileDialog from './components/ProfileDialog.vue'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const permStore = usePermissionStore()
+const tabsStore = useTabsStore()
 const { isLoggedIn, currentUser } = storeToRefs(authStore)
 const { isSuperAdmin, permissions } = storeToRefs(permStore)
 
@@ -138,8 +144,16 @@ const menuItems = computed(() => {
  */
 function handleLogout() {
   authStore.logout()
+  tabsStore.clear()
   router.push('/login')
 }
+
+// 监听路由变化，自动添加标签
+watch(route, (newRoute) => {
+  if (isLoggedIn.value && newRoute.meta?.title && !newRoute.meta?.noAuth) {
+    tabsStore.addTab(newRoute)
+  }
+}, { immediate: true })
 
 onMounted(() => {
   // 组件挂载时检查登录状态
